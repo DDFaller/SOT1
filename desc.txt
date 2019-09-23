@@ -1,0 +1,2 @@
+Run ola.c I=0 D=1
+Run ol2.c
