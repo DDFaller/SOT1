@@ -9,13 +9,7 @@
 #define WHITESPACE '?'
 #define ValidCharacters(c) if (c != ' ' && c != '\n' && c != EOF && c != '=' && c!= '*')
 
-typedef enum
-{
-	prioridade,
-	roundRobin,
-	RealTime,
-	Unknown
-}Escalonadores;
+
 char ReadIgnoringCharacter(FILE *f, char ignoredCharacter) {
 	char c;
 	c = fgetc(f);

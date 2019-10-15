@@ -1,0 +1,5 @@
+﻿  Interpretador.c
+c:\users\daniel\source\repos\so_t1\so_t1\interpretador.c(77): warning C4047: '==': 'int' difere em níveis de indireção de 'char [2]'
+c:\users\daniel\source\repos\so_t1\so_t1\interpretador.c(110): warning C4101: 'palavra': variável local não referenciada
+c:\users\daniel\source\repos\so_t1\so_t1\interpretador.c(108): warning C4715: 'ReadLine': nem todos os caminhos de controle retornam um valor
+  SO_T1.vcxproj -> C:\Users\Daniel\source\repos\SO_T1\Debug\SO_T1.exe
