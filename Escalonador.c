@@ -1,9 +1,22 @@
 #include "Escalonador.h"
 #include "Lista.h"
+#include<sys/ipc.h>
+#include<sys/shm.h>
+#include<sys/stat.h>
+#include<unistd.h>
+#include<sys/wait.h>
+#include<stdio.h>
+#include<stdlib.h>
 
 #define NULL 0
 
-static LIS_tppLista processos;
+static LIS_tppLista filaDeRoundRobin;
+static LIS_tppLista filaDePrioridade;
+static LIS_tppLista filaDeRealTime;
+
+static int timeAtual;
+
+const char * vectorNull = {NULL};
 
 typedef struct processo {
 	Escalonadores tipo;
@@ -14,6 +27,7 @@ typedef struct processo {
 	int id;
 	char * fileName;
 } Processo;
+static Processo * processoAtual;
 
 void priority(char * fileName, int priority) {
 	Processo * novoProcesso;
@@ -25,7 +39,7 @@ void priority(char * fileName, int priority) {
 	novoProcesso->duracao = NULL;
 	novoProcesso->tipo = prioridade;
 
-	AdicionaProcesso(novoProcesso);
+	AdicionaProcesso(filaDePrioridade,novoProcesso);
 }
 void roundrobin(char * fileName) {
 	Processo * novoProcesso;
@@ -37,7 +51,7 @@ void roundrobin(char * fileName) {
 	novoProcesso->inicio = NULL;
 	novoProcesso->duracao = NULL;
 
-	AdicionaProcesso(novoProcesso);
+	AdicionaProcesso(filaDeRoundRobin,novoProcesso);
 }
 void realTime(char * fileName, int init, int duration) {
 	Processo * novoProcesso;
@@ -49,18 +63,68 @@ void realTime(char * fileName, int init, int duration) {
 	novoProcesso->tipo = RealTime;
 	novoProcesso->prioridade = NULL;
 
-	AdicionaProcesso(novoProcesso);
+	AdicionaProcesso(filaDeRealTime,novoProcesso);
 }
 
-void AdicionaProcesso(Processo * p) {
-	LIS_InserirElementoFim(processos, (void*)p);
+void EscalonaRealTime(){
 }
 
-void init() {
-	//segmento1 = shmget(8752, sizeof(int) * 4, IPC_CREAT | IPC_EXCL | S_IRUSR | S_IWUSR);
-	processos = LIS_CriarLista(ExcluiProcesso);
-	//signal(SIGSTOP,ParaProcessos)
+void EscalonaPrioridade(){
+}
 
+void EscalonaRoundRobin(){
+}
+
+void ExibeProcessos(LIS_tppLista pLista){
+    Processo * p;  
+    printf("---------------Exibicao de processos------------------");  
+    for(int i =0; i < LIS_TamanhoLista(pLista);i++){
+            p = (Processo*)LIS_ObterValor(pLista);
+            printf("%d \t %s \t %d \n",p->id,p->fileName,p->inicio);
+            LIS_AvancarElemento(pLista);    
+    }
+    printf("---------------FIM da Exibicao de processos------------------");
+}
+
+
+void AtualizaProcesso(){
+    Processo * temp;
+    timeAtual += 1;
+    if(LIS_TamanhoLista(filaDeRealTime)){
+        EscalonaRealTime();    
+    }
+    else if(LIS_TamanhoLista(filaDePrioridade)){
+        EscalonaPrioridade();    
+    }
+    else{
+        EscalonaRoundRobin();
+    }
+    printf("Fila de Real Time \n");
+    ExibeProcessos(filaDeRealTime);
+    printf("Fila de Prioridade \n");
+    ExibeProcessos(filaDePrioridade);
+    printf("Fila de Round Robin \n");
+    ExibeProcessos(filaDeRoundRobin);
+}
+
+void AdicionaProcesso(LIS_tppLista pLista,Processo * p) {
+    int segmento;
+    int * pid;	
+    segmento = shmget(8752, sizeof(int) * 4, IPC_CREAT | IPC_EXCL | S_IRUSR | S_IWUSR);
+    pid = (int*)shmat(segmento,0,0);
+    *pid = 0;    
+    if(fork() < 0){
+        *pid = getpid();
+        kill(SIGSTOP,getpid());
+        execve(p->fileName,vectorNull,NULL);
+    }
+    else{
+        while(pid == 0){
+        }
+        p->id = *pid;
+        LIS_InserirElementoFim(pLista, (void*)p);       
+        AtualizaProcesso();    
+    }
 }
 
 void ExcluiProcesso(void * pDado) {
@@ -70,7 +134,30 @@ void ExcluiProcesso(void * pDado) {
 	free(pDado);
 }
 
+void init() {
+    timeAtual = 0;
+	//segmento1 = shmget(8752, sizeof(int) * 4, IPC_CREAT | IPC_EXCL | S_IRUSR | S_IWUSR);
+    
+    filaDePrioridade = LIS_CriarLista(ExcluiProcesso); 
+    filaDeRoundRobin = LIS_CriarLista(ExcluiProcesso);
+    filaDeRealTime   = LIS_CriarLista(ExcluiProcesso);
+	//signal(SIGSTOP,ParaProcessos)
+}
+
+Processo * BuscaProcessoTempo(LIS_tppLista pLista, int time){
+    Processo * encontrado = NULL;
+    Processo * atual;    
+    for(int i =0;i < LIS_TamanhoLista(pLista);i++){
+        atual = (Processo*)LIS_ObterValor(pLista);            
+        if(atual->inicio == time){
+            encontrado = atual;        
+        }    
+        LIS_AvancarElemento(pLista);
+    }
+    return encontrado;    
+}
+
 void ParaProcessos(int signo) {
-	Processo * p = (Processo*)LIS_ObterValor(processos);
+	
 	//kill(p->id, SIGSTOP);
 }

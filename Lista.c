@@ -5,7 +5,7 @@
 #include   <assert.h>
 
 #define LISTA_OWN
-#include "LISTA.h"
+#include "Lista.h"
 #undef LISTA_OWN
 
 /***********************************************************************
@@ -56,6 +56,8 @@ typedef struct LIS_tagLista {
 
 /***** Protótipos das funções encapuladas no módulo *****/
 
+static int LIS_TamanhoLista(LIS_tppLista pLista);
+
 static void LiberarElemento(LIS_tppLista   pLista,
 	tpElemLista  * pElem);
 
@@ -63,6 +65,7 @@ static tpElemLista * CriarElemento(LIS_tppLista pLista,
 	void *       pValor);
 
 static void LimparCabeca(LIS_tppLista pLista);
+
 
 /*****  Código das funções exportadas pelo módulo  *****/
 
@@ -90,6 +93,15 @@ LIS_tppLista LIS_CriarLista(
 	return pLista;
 
 } /* Fim função: LIS  &Criar lista */
+
+/***************************************************************************
+*
+*  Função: LIS  &Tamanho lista
+*  ****/
+int LIS_TamanhoLista(LIS_tppLista pLista){
+    return pLista->numElem;
+}
+
 
 /***************************************************************************
 *
@@ -183,7 +195,7 @@ LIS_tpCondRet LIS_InserirElementoAntes(LIS_tppLista pLista,
 	} /* if */
 
 	pLista->pElemCorr = pElem;
-
+    pLista->numElem = pLista->numElem + 1;
 	return LIS_CondRetOK;
 
 } /* Fim função: LIS  &Inserir elemento antes */
@@ -237,7 +249,7 @@ LIS_tpCondRet LIS_InserirElementoApos(LIS_tppLista pLista,
 	} /* if */
 
 	pLista->pElemCorr = pElem;
-
+    pLista->numElem = pLista->numElem + 1;
 	return LIS_CondRetOK;
 
 } /* Fim função: LIS  &Inserir elemento após */
@@ -288,7 +300,7 @@ LIS_tpCondRet LIS_InserirElementoFim(LIS_tppLista pLista,
 	} /* if */
 
 	pLista->pElemCorr = pElem;
-
+    pLista->numElem = pLista->numElem + 1;
 	return LIS_CondRetOK;
 
 } /* Fim função: LIS  &Inserir elemento antes */
@@ -298,7 +310,7 @@ LIS_tpCondRet LIS_InserirElementoFim(LIS_tppLista pLista,
 *  Função: LIS  &Inserir elemento após
 *  ****/
 
-LIS_tpCondRet LIS_InserirElementoApos(LIS_tppLista pLista,
+LIS_tpCondRet LIS_InserirElementoFim2(LIS_tppLista pLista,
 	void * pValor)
 
 {
@@ -326,7 +338,7 @@ LIS_tpCondRet LIS_InserirElementoApos(LIS_tppLista pLista,
 		pFim->pProx = pElem;
 		pElem->pAnt = pFim;
 	}
-
+    pLista->numElem = pLista->numElem + 1;
 	return LIS_CondRetOK;
 } /* Fim função: LIS  &Inserir elemento após */
 
@@ -377,7 +389,7 @@ LIS_tpCondRet LIS_ExcluirElemento(LIS_tppLista pLista)
 	} /* if */
 
 	LiberarElemento(pLista, pElem);
-
+    pLista->numElem = pLista->numElem - 1;
 	return LIS_CondRetOK;
 
 } /* Fim função: LIS  &Excluir elemento */

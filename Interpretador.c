@@ -48,7 +48,7 @@ char ReadWord(FILE * f, char ** word) {
 		}
 	}
 	*(nameHolder + idx++) = '\0';
-	strcpy_s(name, idx, nameHolder);
+	strcpy(name, idx, nameHolder);
 	free(nameHolder);
 	*word = name;
 	return c;
@@ -109,19 +109,23 @@ void Interpreter(FILE * f) {
 	switch (type)
 	{
 		case(prioridade):
-			priority(fileName, firstDuration);
+            printf("Adicionando processo  na fila de Prioridade \n");		
+            priority(fileName, firstDuration);
 			break;
 		case(roundRobin):
+            printf("Adicionando processo  na fila de Round Robin \n");
 			roundrobin(fileName);
 			break;
 		case(RealTime):
+            printf("Adicionando processo na fila de Real Time \n");
 			realTime(fileName,firstDuration,secondDuration);
 			break;
 		default:
 			break;
 	}
-	printf("%d %s %s %d %d \n",type, fileName, opr, firstDuration, secondDuration);
-	
+    printf("TIPO\tNAME\tOPR\tInicio\tDuracao");
+	printf("%d\t%s\t%s\t%d\t%d\t\n",type, fileName, opr, firstDuration, secondDuration);
+	printf("-------------------------------------------");
 }
 
 
