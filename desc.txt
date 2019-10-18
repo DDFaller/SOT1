@@ -1,2 +1,3 @@
-Run ola.c I=0 D=1
-Run ol2.c
+Run realTime.c I=5 D=50
+Run priority.c PR=1
+Run roundRobin.c

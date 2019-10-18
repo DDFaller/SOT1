@@ -199,7 +199,7 @@ LIS_tpCondRet LIS_ExcluirElemento(LIS_tppLista pLista);
 *
 ***********************************************************************/
 
-LIS_tpCondRet LIS_ExcluirElemento(LIS_tppLista pLista, void * output);
+LIS_tpCondRet LIS_ExcluirElemento(LIS_tppLista pLista, void ** output);
 
 
 /***********************************************************************

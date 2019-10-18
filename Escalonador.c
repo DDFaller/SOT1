@@ -118,22 +118,29 @@ void PausaProcesso(Processo * p){
 	}
 	p->status = 0;
 	killStatus = kill(p->id,SIGSTOP);
+	
 	if(killStatus == 1){//Envio de sinal falhou supomos que o processo terminou
 		processo * p;
 		if(processoExecutando->tipo == prioridade){
-			
+			void * output;
 			p = BuscaProcessoID(filaDePrioridade,processoExecutando->id);
+			LIS_ExcluirElemento(filaDeRoundRobin,&output);
+			LIS_InserirElementoFim(debugger->processosConcluidos,output);
 		}
 		if(processoExecutando->tipo == RealTime){
-			p = BuscaProcessoID(filaDeRealTime,processoExecutando->id);
+			void * output;
+			p = BuscaProcessoID(filaDePrioridade,processoExecutando->id);
+			LIS_ExcluirElemento(filaDeRoundRobin,&output);
+			LIS_InserirElementoFim(debugger->processosConcluidos,output);
+		
 		}
 		if(processoExecutando->tipo == roundRobin){
 			void * output;
 			SalvaCorrente(filaDeRoundRobin);
+			
 			p = BuscaProcessoID(filaDeRoundRobin,processoExecutando->id);
-			LIS_ExcluirElemento(filaDeRoundRobin, output);  
+			LIS_ExcluirElemento(filaDeRoundRobin,&output);  
 			LIS_InserirElementoFim(debugger->processosConcluidos, output);
-
 			ResetaCorrente(filaDeRoundRobin);
 		}
 	}
@@ -251,6 +258,7 @@ void ExibeProcessos(LIS_tppLista pLista){
 void AdicionaProcesso(LIS_tppLista pLista,Processo * p) {
     int segmento;
     int * pid;	
+    
     segmento = shmget(8752, sizeof(int) * 4, IPC_CREAT | IPC_EXCL | S_IRUSR | S_IWUSR);
     pid = (int*)shmat(segmento,0,0);
     *pid = 0;    
@@ -281,6 +289,7 @@ void init() {
 	#else
 		timeAtual = 0;
     #endif
+    processoExecutando = NULL;
 
     filaDePrioridade = LIS_CriarLista(ExcluiProcesso); 
     filaDeRoundRobin = LIS_CriarLista(ExcluiProcesso);

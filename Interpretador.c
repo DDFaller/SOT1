@@ -110,14 +110,17 @@ void Interpreter(FILE * f) {
 	{
 		case(prioridade):
             printf("Adicionando processo  na fila de Prioridade \n");		
+            
             priority(fileName, firstDuration);
 			break;
 		case(roundRobin):
             printf("Adicionando processo  na fila de Round Robin \n");
+			
 			roundrobin(fileName);
 			break;
 		case(RealTime):
             printf("Adicionando processo na fila de Real Time \n");
+			
 			realTime(fileName,firstDuration,secondDuration);
 			break;
 		default:

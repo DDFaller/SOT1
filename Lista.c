@@ -401,7 +401,7 @@ LIS_tpCondRet LIS_ExcluirElemento(LIS_tppLista pLista)
 *	$ED: Retorna o valor do Nó a ser excluido.
 *  ****/
 
-LIS_tpCondRet LIS_ExcluirElemento(LIS_tppLista pLista, void * output)
+LIS_tpCondRet LIS_ExcluirElemento(LIS_tppLista pLista, void ** output)
 {
 
 	tpElemLista * pElem;
@@ -440,6 +440,7 @@ LIS_tpCondRet LIS_ExcluirElemento(LIS_tppLista pLista, void * output)
 		pLista->pFimLista = pElem->pAnt;
 	} /* if */
 
+	
 	LiberarElemento(pLista, pElem,output);
 	return LIS_CondRetOK;
 
@@ -667,11 +668,11 @@ void LiberarElemento(LIS_tppLista   pLista,
 ***********************************************************************/
 
 void LiberarElemento(LIS_tppLista   pLista,
-	tpElemLista  * pElem, void * valor)
+	tpElemLista  * pElem, void ** valor)
 {
 	if (pElem->pValor != NULL)
 	{
-		valor = pElem-pValor;
+		*valor = pElem-pValor;
 		//pLista->ExcluirValor(pElem->pValor);
 	} /* if */
 
