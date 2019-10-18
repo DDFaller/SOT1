@@ -2,16 +2,22 @@
 #include <stdio.h>
 #include "Interpretador.h"
 #include <unistd.h>
-
+#include <time.h>
 #define IO 1
 
 int main(void) {
+    time_t lastTime;
+    time_t seconds;
 	FILE * arq;
 	int wait;
 	arq = fopen("desc.txt", "r");
+    lastTime = time(NULL);    
+    Interpreter(arq);
     while(1){
-        Interpreter(arq);
-        sleep(IO);
+        if(time(NULL) - lastTime >= IO * 60){        
+            Interpreter(arq);
+        }
+        
     }	
     
 	fclose(arq);
