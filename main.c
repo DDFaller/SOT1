@@ -16,6 +16,7 @@ int main(void) {
     while(1){
         if(time(NULL) - lastTime >= IO * 60){        
             Interpreter(arq);
+			lastTime = time(NULL);
         }
         
     }	

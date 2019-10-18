@@ -67,6 +67,11 @@ static tpElemLista * CriarElemento(LIS_tppLista pLista,
 static void LimparCabeca(LIS_tppLista pLista);
 
 
+/**** Variaveis estáticas de controle *****/
+
+static tpElemLista * posInicialCorr;
+
+
 /*****  Código das funções exportadas pelo módulo  *****/
 
 /***************************************************************************
@@ -195,7 +200,6 @@ LIS_tpCondRet LIS_InserirElementoAntes(LIS_tppLista pLista,
 	} /* if */
 
 	pLista->pElemCorr = pElem;
-    pLista->numElem = pLista->numElem + 1;
 	return LIS_CondRetOK;
 
 } /* Fim função: LIS  &Inserir elemento antes */
@@ -249,7 +253,6 @@ LIS_tpCondRet LIS_InserirElementoApos(LIS_tppLista pLista,
 	} /* if */
 
 	pLista->pElemCorr = pElem;
-    pLista->numElem = pLista->numElem + 1;
 	return LIS_CondRetOK;
 
 } /* Fim função: LIS  &Inserir elemento após */
@@ -300,7 +303,6 @@ LIS_tpCondRet LIS_InserirElementoFim(LIS_tppLista pLista,
 	} /* if */
 
 	pLista->pElemCorr = pElem;
-    pLista->numElem = pLista->numElem + 1;
 	return LIS_CondRetOK;
 
 } /* Fim função: LIS  &Inserir elemento antes */
@@ -338,7 +340,6 @@ LIS_tpCondRet LIS_InserirElementoFim2(LIS_tppLista pLista,
 		pFim->pProx = pElem;
 		pElem->pAnt = pFim;
 	}
-    pLista->numElem = pLista->numElem + 1;
 	return LIS_CondRetOK;
 } /* Fim função: LIS  &Inserir elemento após */
 
@@ -389,10 +390,63 @@ LIS_tpCondRet LIS_ExcluirElemento(LIS_tppLista pLista)
 	} /* if */
 
 	LiberarElemento(pLista, pElem);
-    pLista->numElem = pLista->numElem - 1;
 	return LIS_CondRetOK;
 
 } /* Fim função: LIS  &Excluir elemento */
+
+/***************************************************************************
+*
+*  Função: LIS  &Excluir elemento
+*	
+*	$ED: Retorna o valor do Nó a ser excluido.
+*  ****/
+
+LIS_tpCondRet LIS_ExcluirElemento(LIS_tppLista pLista, void * output)
+{
+
+	tpElemLista * pElem;
+
+#ifdef _DEBUG
+	assert(pLista != NULL);
+#endif
+
+	if (pLista->pElemCorr == NULL)
+	{
+		return LIS_CondRetListaVazia;
+	} /* if */
+
+	pElem = pLista->pElemCorr;
+
+	/* Desencadeia à esquerda */
+
+	if (pElem->pAnt != NULL)
+	{
+		pElem->pAnt->pProx = pElem->pProx;
+		pLista->pElemCorr = pElem->pAnt;
+	}
+	else {
+		pLista->pElemCorr = pElem->pProx;
+		pLista->pOrigemLista = pLista->pElemCorr;
+	} /* if */
+
+ /* Desencadeia à direita */
+
+	if (pElem->pProx != NULL)
+	{
+		pElem->pProx->pAnt = pElem->pAnt;
+	}
+	else
+	{
+		pLista->pFimLista = pElem->pAnt;
+	} /* if */
+
+	LiberarElemento(pLista, pElem,output);
+	return LIS_CondRetOK;
+
+} /* Fim função: LIS  &Excluir elemento */
+
+
+
 
 /***************************************************************************
 *
@@ -414,6 +468,18 @@ void * LIS_ObterValor(LIS_tppLista pLista)
 	return pLista->pElemCorr->pValor;
 
 } /* Fim função: LIS  &Obter referência para o valor contido no elemento */
+
+void SalvaCorrente(LIS_tppLista pLista){
+	posInicialCorr = pLista->pElemCorr;
+}
+
+void ResetaCorrente(LIS_tppLista pLista){
+	pLista->pElemCorr = posInicialCorr;
+	posInicialCorr = NULL;
+}
+
+
+
 
 /***************************************************************************
 *
@@ -587,10 +653,32 @@ void LiberarElemento(LIS_tppLista   pLista,
 	} /* if */
 
 	free(pElem);
-
 	pLista->numElem--;
 
 } /* Fim função: LIS  -Liberar elemento da lista */
+
+/***********************************************************************
+*
+*  $FC Função: LIS  -Liberar elemento da lista
+*
+*  $ED Descrição da função
+*     Elimina o próprio elemento e devolve o valor por ele apontado.
+*
+***********************************************************************/
+
+void LiberarElemento(LIS_tppLista   pLista,
+	tpElemLista  * pElem, void * valor)
+{
+	if (pElem->pValor != NULL)
+	{
+		valor = pElem-pValor;
+		//pLista->ExcluirValor(pElem->pValor);
+	} /* if */
+
+	free(pElem);
+	pLista->numElem--;
+} /* Fim função: LIS  -Liberar elemento da lista */
+
 
 
 /***********************************************************************

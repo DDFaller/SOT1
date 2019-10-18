@@ -182,6 +182,28 @@ LIS_tpCondRet LIS_ExcluirElemento(LIS_tppLista pLista);
 
 /***********************************************************************
 *
+*  $FC Função: LIS  &Excluir elemento
+*
+*  $ED Descrição da função
+*     Exclui o elemento corrente da lista dada.
+*     Se existir o elemento aa esquerda do corrente será o novo corrente.
+*     Se não existir e existir o elemento à direita, este se tornará corrente.
+*     Se este também não existir a lista tornou-se vazia.
+*
+*  $EP Parâmetros
+*     pLista    - ponteiro para a lista na qual deve excluir.
+*	  output    - ponteiro a ser retornado com o valor daquele nó.
+*  $FV Valor retornado
+*     LIS_CondRetOK
+*     LIS_CondRetListaVazia
+*
+***********************************************************************/
+
+LIS_tpCondRet LIS_ExcluirElemento(LIS_tppLista pLista, void * output);
+
+
+/***********************************************************************
+*
 *  $FC Função: LIS  &Obter referência para o valor contido no elemento
 *
 *  $ED Descrição da função
@@ -288,8 +310,16 @@ LIS_tpCondRet LIS_AvancarElementoCorrente(LIS_tppLista pLista,
 LIS_tpCondRet LIS_ProcurarValor(LIS_tppLista pLista,
 	void * pValor);
 
+
+
+
 LIS_tpCondRet LIS_InserirElementoFim(LIS_tppLista pLista,
 	void * pValor);
+
+void SalvaCorrente(LIS_tppLista pLista);
+
+void ResetaCorrente(LIS_tppLista pLista);
+
 
 #undef LISTA_EXT
 
