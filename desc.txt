@@ -1,3 +1,3 @@
-Run realTime.c I=5 D=50
-Run priority.c PR=1
-Run roundRobin.c
+Run realTime I=5 D=50
+Run priority PR=1
+Run roundRobin

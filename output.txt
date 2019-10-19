@@ -1,0 +1,58 @@
+Abrindo FIFO
+Começando a ler...
+0 
+Palavra lida  realTime ultimo caracter ? ? 
+Palavra lida I ultimo caracter ?=? 
+Operador I 
+Palavra lida 5 ultimo caracter ? ? 
+First Duration> 5
+Palavra lida D ultimo caracter ?=? 
+Palavra lida 50 ultimo caracter ?
+? 
+Second Duration> 50
+Adicionando processo na fila de Real Time 
+0 RealTime  
+0 RealTime  realTime  
+0 RealTime  realTime 5  
+0
+0 RealTime  realTime 5 50  
+-------------------------------------------
+? 0 RealTime  realTime 5 50  ?
+LEN COMMAND 26
+
+ COMANDO 0 RealTime  realTime 5 50 1 
+Palavra lida  priority ultimo caracter ? ? 
+Palavra lida PR ultimo caracter ?=? 
+Operador PR 
+Palavra lida 1 ultimo caracter ?
+? 
+First Duration> 1
+Adicionando processo  na fila de Prioridade 
+1 Priority  
+1 Priority  priority  
+1 Priority  priority 1 
+-------------------------------------------
+? 1 Priority  priority 1 ?
+LEN COMMAND 22
+
+ COMANDO 1 Priority  priority 12 
+Palavra lida  roundRobin ultimo caracter ?
+? 
+Line break detected 
+Adicionando processo  na fila de Round Robin 
+2 RoundRobin  
+2 RoundRobin  roundRobin 
+-------------------------------------------
+? 2 RoundRobin  roundRobin ?
+LEN COMMAND 24
+
+ COMANDO 2 RoundRobin  roundRobin3 
+Palavra lida ÿ ultimo caracter ?ÿ? 
+Palavra lida ÿ ultimo caracter ?ÿ? 
+Operador ÿ 
+Não foi informado a duração 1 para execução do ÿ 
+-------------------------------------------
+? 3 ?
+LEN COMMAND 1
+
+ COMANDO 3Fim da escrita

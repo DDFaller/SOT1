@@ -353,3 +353,59 @@ void ParaProcessos(int signo) {
 	
 	//kill(p->id, SIGSTOP);
 }
+
+char ReadWord(char ** msg, char ** word) {
+	char c;
+	int idx = 0;
+	char * nameHolder = (char*)malloc(sizeof(char) * 20);
+	char * name = (char*)malloc(sizeof(char) * 20);
+
+	nameHolder[idx++] = c;
+	while (TRUE) {
+		c = fgetc(f);
+	    if(c == ' ') {
+			nameHolder[idx++] = c;
+		}
+		else {
+			break;
+		}
+	}
+	*(nameHolder + idx) = '\0';
+	strcpy(name,nameHolder);
+	free(nameHolder);
+	*word = name;
+    printf("Palavra lida %s ultimo caracter ?%c? \n",name,c);
+	return c;
+}
+
+
+
+int main(void){
+    int fpFIFO;
+    char ch[80];
+    int timer = 0;
+    char * caso;
+    
+    init();    
+    if (access(FIFO, F_OK) == -1) {
+        if (mkfifo (FIFO, S_IRUSR | S_IWUSR) != 0) {
+            fprintf (stderr, "Erro ao criar FIFO %s\n", FIFO);
+            return -1;
+        }
+    } 
+    puts ("Abrindo FIFO");
+    if ((fpFIFO = open (FIFO, OPENMODE)) < 0) {
+        fprintf (stderr, "Erro ao abrir a FIFO %s\n", FIFO);
+        return -2;
+    }
+    puts ("Começando a ler...");
+    while (read (fpFIFO, &ch, sizeof(ch)) > 0){
+      time = atoi(ch[0]);
+         
+    }
+    puts ("Fim da leitura");
+    close (fpFIFO);
+    return 0;
+
+    return 0;
+}

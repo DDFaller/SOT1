@@ -1,4 +1,4 @@
 #include <stdio.h>
 
 
-void Interpreter(FILE * f);
+char * Interpreter(FILE * f,int seconds);
