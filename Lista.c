@@ -56,8 +56,6 @@ typedef struct LIS_tagLista {
 
 /***** Protótipos das funções encapuladas no módulo *****/
 
-static int LIS_TamanhoLista(LIS_tppLista pLista);
-
 static void LiberarElemento(LIS_tppLista   pLista,
 	tpElemLista  * pElem);
 
@@ -401,7 +399,7 @@ LIS_tpCondRet LIS_ExcluirElemento(LIS_tppLista pLista)
 *	$ED: Retorna o valor do Nó a ser excluido.
 *  ****/
 
-LIS_tpCondRet LIS_ExcluirElemento(LIS_tppLista pLista, void ** output)
+LIS_tpCondRet LIS_ExcluirElementoOutput(LIS_tppLista pLista, void ** output)
 {
 
 	tpElemLista * pElem;
@@ -441,7 +439,7 @@ LIS_tpCondRet LIS_ExcluirElemento(LIS_tppLista pLista, void ** output)
 	} /* if */
 
 	
-	LiberarElemento(pLista, pElem,output);
+	LiberarElementoOutput(pLista, pElem,output);
 	return LIS_CondRetOK;
 
 } /* Fim função: LIS  &Excluir elemento */
@@ -667,12 +665,12 @@ void LiberarElemento(LIS_tppLista   pLista,
 *
 ***********************************************************************/
 
-void LiberarElemento(LIS_tppLista   pLista,
+void LiberarElementoOutput(LIS_tppLista   pLista,
 	tpElemLista  * pElem, void ** valor)
 {
 	if (pElem->pValor != NULL)
 	{
-		*valor = pElem-pValor;
+		*valor = pElem->pValor;
 		//pLista->ExcluirValor(pElem->pValor);
 	} /* if */
 

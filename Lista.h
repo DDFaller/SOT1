@@ -199,7 +199,7 @@ LIS_tpCondRet LIS_ExcluirElemento(LIS_tppLista pLista);
 *
 ***********************************************************************/
 
-LIS_tpCondRet LIS_ExcluirElemento(LIS_tppLista pLista, void ** output);
+LIS_tpCondRet LIS_ExcluirElementoOutput(LIS_tppLista pLista, void ** output);
 
 
 /***********************************************************************
@@ -310,9 +310,6 @@ LIS_tpCondRet LIS_AvancarElementoCorrente(LIS_tppLista pLista,
 LIS_tpCondRet LIS_ProcurarValor(LIS_tppLista pLista,
 	void * pValor);
 
-
-
-
 LIS_tpCondRet LIS_InserirElementoFim(LIS_tppLista pLista,
 	void * pValor);
 
@@ -320,6 +317,7 @@ void SalvaCorrente(LIS_tppLista pLista);
 
 void ResetaCorrente(LIS_tppLista pLista);
 
+int LIS_TamanhoLista(LIS_tppLista pLista);
 
 #undef LISTA_EXT
 

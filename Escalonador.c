@@ -7,13 +7,15 @@
 #include<sys/wait.h>
 #include<stdio.h>
 #include<stdlib.h>
+#include <fcntl.h>
 #if defined TIMEFUNCTION
 #include <time.h>
 #else
 #endif
 
-
-#define NULL 0
+#define TRUE 1
+#define FIFO "minhaFifo"
+#define OPENMODE O_RDONLY
 
 static LIS_tppLista filaDeRoundRobin;
 static LIS_tppLista filaDePrioridade;
@@ -51,6 +53,13 @@ typedef struct debugger{
 	LIS_tppLista processosConcluidos;
 }Debugger;
 
+void priority(char * fileName,int priority);
+void roundrobin(char * fileName);
+void realTime(char * fileName,int inicio,int fim);
+Processo * BuscaProcessoID(LIS_tppLista pLista,int id);
+Processo * BuscaProcessoTempo(LIS_tppLista pLista,int id);
+Processo * BuscaProcessoPrioritario(LIS_tppLista pLista);
+
 
 static Constantes * configEscalonador;
 static Debugger * debugger;
@@ -63,7 +72,7 @@ void priority(char * fileName, int priority) {
 	novoProcesso = (Processo*)malloc(sizeof(Processo*));
 	
 	novoProcesso->prioridade = priority;
-	novoProcesso->fileName = fileName;
+    strcpy(novoProcesso->fileName,fileName);
 	novoProcesso->inicio = NULL;
 	novoProcesso->duracao = prioridade * configEscalonador->tempoPorPrioridade;
 	novoProcesso->tipo = prioridade;
@@ -75,7 +84,7 @@ void roundrobin(char * fileName) {
 	novoProcesso = (Processo*)malloc(sizeof(Processo*));
 
 	novoProcesso->tipo = roundRobin;
-	novoProcesso->fileName = fileName;
+	strcpy(novoProcesso->fileName,fileName);
 	novoProcesso->prioridade = NULL;
 	novoProcesso->inicio = NULL;
 	novoProcesso->duracao = configEscalonador->tempoParaRodar;
@@ -83,6 +92,7 @@ void roundrobin(char * fileName) {
 	AdicionaProcesso(filaDeRoundRobin,novoProcesso);
 }
 void realTime(char * fileName, int init, int duration) {
+    char ch;    
     if( init + duration > configEscalonador->tempoParaRodar){
         printf("Nao e possivel adicionar esse processo, excede o tempo permitido \n");
         return;
@@ -92,7 +102,8 @@ void realTime(char * fileName, int init, int duration) {
 
 	novoProcesso->inicio = init;
 	novoProcesso->duracao = duration;
-	novoProcesso->fileName = fileName;
+    novoProcesso->fileName = (char*)malloc(sizeof(char) * strlen(fileName));
+	strcpy(novoProcesso->fileName,fileName);
 	novoProcesso->tipo = RealTime;
 	novoProcesso->prioridade = NULL;
     
@@ -102,7 +113,7 @@ void realTime(char * fileName, int init, int duration) {
 void PausaProcesso(Processo * p){
     int killStatus;//0:Enviou sinal 1:Falhou
 	
-	if( p->tipo == Prioridade){
+	if( p->tipo == prioridade){
 		p->prioridade += 1;
 	}
 	if(p->tipo == RealTime){
@@ -120,17 +131,17 @@ void PausaProcesso(Processo * p){
 	killStatus = kill(p->id,SIGSTOP);
 	
 	if(killStatus == 1){//Envio de sinal falhou supomos que o processo terminou
-		processo * p;
+		Processo * p;
 		if(processoExecutando->tipo == prioridade){
 			void * output;
 			p = BuscaProcessoID(filaDePrioridade,processoExecutando->id);
-			LIS_ExcluirElemento(filaDeRoundRobin,&output);
+			LIS_ExcluirElementoOutput(filaDeRoundRobin,&output);
 			LIS_InserirElementoFim(debugger->processosConcluidos,output);
 		}
 		if(processoExecutando->tipo == RealTime){
 			void * output;
 			p = BuscaProcessoID(filaDePrioridade,processoExecutando->id);
-			LIS_ExcluirElemento(filaDeRoundRobin,&output);
+			LIS_ExcluirElementoOutput(filaDeRoundRobin,&output);
 			LIS_InserirElementoFim(debugger->processosConcluidos,output);
 		
 		}
@@ -139,7 +150,7 @@ void PausaProcesso(Processo * p){
 			SalvaCorrente(filaDeRoundRobin);
 			
 			p = BuscaProcessoID(filaDeRoundRobin,processoExecutando->id);
-			LIS_ExcluirElemento(filaDeRoundRobin,&output);  
+			LIS_ExcluirElementoOutput(filaDeRoundRobin,&output);  
 			LIS_InserirElementoFim(debugger->processosConcluidos, output);
 			ResetaCorrente(filaDeRoundRobin);
 		}
@@ -158,7 +169,7 @@ void LiberaProcesso(Processo * p){
 		
 	}
 
-    processoExecutando->inicio = tempoAtual;    
+    processoExecutando->inicio = timeAtual;    
     processoExecutando = p;
 	p->status = 1;
 	kill(p->id,SIGCONT);       
@@ -166,13 +177,13 @@ void LiberaProcesso(Processo * p){
 
 void EscalonaRealTime(){
     Processo * pendente;
-    pendente = BuscaProcessoTempo(filaDeRealTime,tempoAtual);    
+    pendente = BuscaProcessoTempo(filaDeRealTime,timeAtual);    
     
 	if(processoExecutando == NULL){
         LiberaProcesso(pendente); 
     }
     else{
-        if(tempoAtual - processoExecutando->inicio > processoExecutando->duracao){
+        if(timeAtual - processoExecutando->inicio > processoExecutando->duracao){
             PausaProcesso(processoExecutando);
             LiberaProcesso(pendente);
         }
@@ -190,7 +201,7 @@ void EscalonaPrioridade(){
         LiberaProcesso(pendente); 
     }
     else{
-        if(tempoAtual - processoExecutando->inicio > processoExecutando->duracao){
+        if(timeAtual - processoExecutando->inicio > processoExecutando->duracao){
             PausaProcesso(processoExecutando);
             LiberaProcesso(pendente);
         }
@@ -212,7 +223,7 @@ void EscalonaRoundRobin(){
 		LiberaProcesso(pendente);
 	}
 	else{
-		if(tempoAtual - processoExecutando->inicio > processoExecutando->duracao){
+		if(timeAtual - processoExecutando->inicio > processoExecutando->duracao){
 			PausaProcesso(processoExecutando);
 			LiberaProcesso(pendente);
 		}
@@ -258,21 +269,24 @@ void ExibeProcessos(LIS_tppLista pLista){
 void AdicionaProcesso(LIS_tppLista pLista,Processo * p) {
     int segmento;
     int * pid;	
+    char ch;
     
-    segmento = shmget(8752, sizeof(int) * 4, IPC_CREAT | IPC_EXCL | S_IRUSR | S_IWUSR);
+    segmento = shmget(8752, sizeof(int), IPC_CREAT | S_IRUSR | S_IWUSR);
     pid = (int*)shmat(segmento,0,0);
-    *pid = 0;    
-    if(fork() < 0){
+    *pid = 0;
+    scanf("%c",&ch);        
+    if(fork() == 0){
         *pid = getpid();
         kill(getpid(),SIGSTOP);
         execve(p->fileName,vectorNull,NULL);
     }
     else{
-        while(pid == 0){
+        while(*pid == 0){
         }
+        printf("PID > %d",*pid);
         p->id = *pid;
         LIS_InserirElementoFim(pLista, (void*)p);       
-        AtualizaProcesso();    
+        //AtualizaProcesso();    
     }
 }
 
@@ -337,11 +351,11 @@ Processo * BuscaProcessoTempo(LIS_tppLista pLista, int time){
 Processo * BuscaProcessoPrioritario(LIS_tppLista pLista){
     Processo * atual;
 	int minPri = configEscalonador->maxPrioridades + 1;
-	processo * prioritario = NULL;
+	Processo * prioritario = NULL;
     for(int i =0;i < LIS_TamanhoLista(pLista);i++){
         atual = (Processo*)LIS_ObterValor(pLista);            
-        if(atual->Prioridade < minPri){
-            minPri = atual->Prioridade;        
+        if(atual->prioridade < minPri){
+            minPri = atual->prioridade;        
 			prioritario = atual;
         }    
         LIS_AvancarElemento(pLista);
@@ -349,43 +363,41 @@ Processo * BuscaProcessoPrioritario(LIS_tppLista pLista){
     return prioritario;    
 }
 
+char * GetSubstring(char * ch, int start, int end){
+    char *inicio = &ch[start];
+    char *fim = &ch[end];
+    // Note the + 1 here, to have a null terminated substring
+    char *substr = (char *)calloc(1, fim - inicio + 1);
+    memcpy(substr, inicio, fim - inicio);
+    return substr;
+}
+
+int FindWhiteSpace(char * palavra, int idx){
+    int max;
+    char ch;
+    max = strlen(palavra);
+    while(idx != max){
+        ch = palavra[idx];
+        if(ch == ' ' || ch == '\n'){
+            return idx;        
+        }        
+        idx += 1;        
+    }
+    return max;
+}
+
 void ParaProcessos(int signo) {
 	
 	//kill(p->id, SIGSTOP);
-}
-
-char ReadWord(char ** msg, char ** word) {
-	char c;
-	int idx = 0;
-	char * nameHolder = (char*)malloc(sizeof(char) * 20);
-	char * name = (char*)malloc(sizeof(char) * 20);
-
-	nameHolder[idx++] = c;
-	while (TRUE) {
-		c = fgetc(f);
-	    if(c == ' ') {
-			nameHolder[idx++] = c;
-		}
-		else {
-			break;
-		}
-	}
-	*(nameHolder + idx) = '\0';
-	strcpy(name,nameHolder);
-	free(nameHolder);
-	*word = name;
-    printf("Palavra lida %s ultimo caracter ?%c? \n",name,c);
-	return c;
 }
 
 
 
 int main(void){
     int fpFIFO;
-    char ch[80];
-    int timer = 0;
-    char * caso;
-    
+    char ch[30];
+    int timer = 0,pos = 0,whiteSpace = 0;
+    char * caso,*fileName,*inicio,*duracao;   
     init();    
     if (access(FIFO, F_OK) == -1) {
         if (mkfifo (FIFO, S_IRUSR | S_IWUSR) != 0) {
@@ -400,9 +412,47 @@ int main(void){
     }
     puts ("Começando a ler...");
     while (read (fpFIFO, &ch, sizeof(ch)) > 0){
-      time = atoi(ch[0]);
-         
+      pos = 0;
+      //TIMER
+      whiteSpace = FindWhiteSpace(ch,0);
+      timer = atoi(GetSubstring(ch,0,whiteSpace));
+      pos = whiteSpace;
+        
+      //CASO
+      whiteSpace = FindWhiteSpace(ch,pos + 1);
+      caso = GetSubstring(ch,pos,whiteSpace);
+      pos = whiteSpace;
+      
+      //FILENAME
+      whiteSpace = FindWhiteSpace(ch,pos + 1);
+      fileName = GetSubstring(ch,pos,whiteSpace);
+      pos = whiteSpace;
+      
+      //INICIO
+      if(strcmp(caso," Priority") == 0 || strcmp(caso," RealTime") == 0){
+        whiteSpace = FindWhiteSpace(ch,pos + 1);
+        inicio = GetSubstring(ch,pos,whiteSpace);
+        pos = whiteSpace;
+      }
+      //DURACAO
+      if(strcmp(caso," RealTime") == 0){
+        whiteSpace = FindWhiteSpace(ch,pos + 1);
+        duracao = GetSubstring(ch,pos,whiteSpace);
+        pos = whiteSpace;      
+      }
+      printf("Caso> %s ",caso);
+      if(strcmp(caso," Priority") == 0){
+         priority(fileName,atoi(inicio));
+      }
+      if(strcmp(caso," RealTime") == 0){
+         realTime(fileName,atoi(inicio),atoi(duracao));
+      }
+      if(strcmp(caso," RoundRobin") == 0){
+         roundrobin(fileName);
+      }
+   
     }
+    ExibeProcessos(filaDeRealTime);
     puts ("Fim da leitura");
     close (fpFIFO);
     return 0;

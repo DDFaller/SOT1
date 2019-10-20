@@ -136,7 +136,7 @@ char * Interpreter(FILE * f, int seconds) {
 	{
 		case(prioridade):
             printf("Adicionando processo  na fila de Prioridade \n");		
-            strcat(command," Priority ");
+            strcat(command," Priority");
             printf("%s \n",command);            
             strcat(command,fileName);
             strcat(command,whitespace);
@@ -146,14 +146,14 @@ char * Interpreter(FILE * f, int seconds) {
             break;
 		case(roundRobin):
             printf("Adicionando processo  na fila de Round Robin \n");
-			strcat(command," RoundRobin ");
+			strcat(command," RoundRobin");
             printf("%s \n",command);           
             strcat(command,fileName);
             printf("%s \n",command);
             break;
 		case(RealTime):
             printf("Adicionando processo na fila de Real Time \n");
-			strcat(command," RealTime ");
+			strcat(command," RealTime");
             printf("%s \n",command);            
             strcat(command,fileName);
             strcat(command,whitespace);
