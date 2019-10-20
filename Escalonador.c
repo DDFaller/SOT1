@@ -8,10 +8,7 @@
 #include<stdlib.h>
 #include <fcntl.h>
 #include<string.h>
-#if defined TIMEFUNCTION
 #include <time.h>
-#else
-#endif
 
 #define TRUE 1
 #define FIFO "minhaFifo"
@@ -24,7 +21,7 @@ static LIS_tppLista filaDeRealTime;
 #if defined TIMEFUNCTION
 static time_T timeAtual;	
 #else
-static int timeAtual;
+static float timeAtual;
 #endif
 
 const char * vectorNull = {NULL};
@@ -128,7 +125,7 @@ void PausaProcesso(Processo * p){
 		p->prioridade += 1;
 	}
 	if(p->tipo == RealTime){
-		if(timeAtual != p->inicio + p->duracao){
+		if(timeAtual < p->inicio + p->duracao){
 			printf("Erro processo %s,em Real Time foi pausado quando não deveria",p->fileName);
 		}
 		else{
@@ -170,7 +167,6 @@ void PausaProcesso(Processo * p){
 }
 
 void LiberaProcesso(Processo * p){
-    char ch;	        
         
     if( p->tipo == 0){//prioridade
         p->duracao = p->prioridade * configEscalonador->tempoPorPrioridade;
@@ -184,7 +180,6 @@ void LiberaProcesso(Processo * p){
     processoExecutando = p;
     processoExecutando->inicio = timeAtual;    
     printf("/%s/ %d %d %d",p->fileName,p->inicio,p->duracao,p->prioridade);
-    scanf("%c",&ch);
     
     
     p->status = 1;
@@ -199,8 +194,8 @@ void EscalonaRealTime(){
         LiberaProcesso(pendente); 
     }
     else{
-        if(timeAtual - processoExecutando->inicio > processoExecutando->duracao){
-            PausaProcesso(processoExecutando);
+        if(timeAtual - processoExecutando->inicio >= processoExecutando->duracao){
+            //PausaProcesso(processoExecutando);
             LiberaProcesso(pendente);
         }
         else{
@@ -220,8 +215,8 @@ void EscalonaPrioridade(){
         LiberaProcesso(pendente); 
     }
     else{
-        if(timeAtual - processoExecutando->inicio > processoExecutando->duracao){
-            PausaProcesso(processoExecutando);
+        if(timeAtual - processoExecutando->inicio >= processoExecutando->duracao){
+            //PausaProcesso(processoExecutando);
             LiberaProcesso(pendente);
         }
         else{
@@ -242,8 +237,8 @@ void EscalonaRoundRobin(){
 		LiberaProcesso(pendente);
 	}
 	else{
-		if(timeAtual - processoExecutando->inicio > processoExecutando->duracao){
-			PausaProcesso(processoExecutando);
+		if(timeAtual - processoExecutando->inicio >= processoExecutando->duracao){
+			//PausaProcesso(processoExecutando);
 			LiberaProcesso(pendente);
 		}
 		else{
@@ -256,10 +251,20 @@ void EscalonaRoundRobin(){
 void AtualizaProcesso(){
     Processo * temp;
     char ch;    
-    printf("Time atual %d \n",timeAtual);    
-    printf("Atualizando processo filaDeRealTime %d\n",LIS_TamanhoLista(filaDeRealTime));
-    printf("Atualizando processo filaDePrioridade %d\n",LIS_TamanhoLista(filaDePrioridade));
-    printf("Atualizando processo filaDeRoundRobin %d\n",LIS_TamanhoLista(filaDeRoundRobin));
+    //printf("Time atual %d \n",timeAtual);    
+    //printf("Atualizando processo filaDeRealTime %d\n",LIS_TamanhoLista(filaDeRealTime));
+    //printf("Atualizando processo filaDePrioridade %d\n",LIS_TamanhoLista(filaDePrioridade));
+    //printf("Atualizando processo filaDeRoundRobin %d\n",LIS_TamanhoLista(filaDeRoundRobin));
+    if(processoExecutando != NULL){
+        if(timeAtual - processoExecutando-> inicio < processoExecutando->duracao){
+            printf("%f - %d < %d \n",timeAtual,processoExecutando-> inicio,processoExecutando-> duracao);
+            printf("Processo Rodando %s %d %d\n",processoExecutando->fileName,processoExecutando->id,processoExecutando->status);
+            return;
+        }
+        else{
+            PausaProcesso(processoExecutando);
+        }
+    }
     
     if(LIS_TamanhoLista(filaDeRealTime) && BuscaProcessoTempo(filaDeRealTime,timeAtual)){
         EscalonaRealTime();    
@@ -272,13 +277,13 @@ void AtualizaProcesso(){
         EscalonaRoundRobin();
     }
 
-    printf("Fila de Real Time \n");
-    ExibeProcessos(filaDeRealTime);
-    printf("Fila de Prioridade \n");
-    ExibeProcessos(filaDePrioridade);
-    printf("Fila de Round Robin \n");
-    ExibeProcessos(filaDeRoundRobin);
-    timeAtual += 1;
+    //printf("Fila de Real Time \n");
+    //ExibeProcessos(filaDeRealTime);
+    //printf("Fila de Prioridade \n");
+    //ExibeProcessos(filaDePrioridade);
+    //printf("Fila de Round Robin \n");
+    //ExibeProcessos(filaDeRoundRobin);
+    printf("%f - %d < %d \n",timeAtual,processoExecutando-> inicio,processoExecutando-> duracao);
 }
 
 void ExibeProcessos(LIS_tppLista pLista){
@@ -417,7 +422,7 @@ void ParaProcessos(int signo) {
 	//kill(p->id, SIGSTOP);
 }
 
-
+void delay(int milliseconds);
 
 int main(void){
     int fpFIFO;
@@ -438,61 +443,75 @@ int main(void){
     }
     ExibeProcessos(filaDePrioridade);    
     puts ("Começando a ler...");
-    while (read (fpFIFO, &ch, sizeof(ch)) > 0){
-      pos = 0;
-      printf("Comando recebido > %s \n",ch);
-      //TIMER
-      whiteSpace = FindWhiteSpace(ch,0);
-      timer = atoi(GetSubstring(ch,0,whiteSpace));
-      pos = whiteSpace;
-      timeAtual = timer;
-      //CASO
-      whiteSpace = FindWhiteSpace(ch,pos + 1);
-      caso = GetSubstring(ch,pos,whiteSpace);
-      pos = whiteSpace;
-      
-      //FILENAME
-      whiteSpace = FindWhiteSpace(ch,pos + 1);
-      fileName = GetSubstring(ch,pos + 1,whiteSpace);
-      pos = whiteSpace;
-      
-      //INICIO
-      if(strcmp(caso," Priority") == 0 || strcmp(caso," RealTime") == 0){
-        whiteSpace = FindWhiteSpace(ch,pos + 1);
-        inicio = GetSubstring(ch,pos,whiteSpace);
+    //while  (read (fpFIFO, &ch, sizeof(ch)) > 0){
+    while(1){    
+      if( (timeAtual -(int)timeAtual) == 0  && read(fpFIFO,&ch,sizeof(ch))> 0){
+        pos = 0;
+        printf("Comando recebido > %s \n",ch);
+        //TIMER
+        whiteSpace = FindWhiteSpace(ch,0);
+        timer = atoi(GetSubstring(ch,0,whiteSpace));
         pos = whiteSpace;
-        printf("Inicio  %s \n",inicio);
-      }
-      //DURACAO
-      if(strcmp(caso," RealTime") == 0){
+        //CASO
         whiteSpace = FindWhiteSpace(ch,pos + 1);
-        duracao = GetSubstring(ch,pos,whiteSpace);
+        caso = GetSubstring(ch,pos,whiteSpace);
         pos = whiteSpace;
-        printf("Duracao  %s \n",duracao);      
-      }
+      
+        //FILENAME
+        whiteSpace = FindWhiteSpace(ch,pos + 1);
+        fileName = GetSubstring(ch,pos + 1,whiteSpace);
+        pos = whiteSpace;
+      
+        //INICIO
+        if(strcmp(caso," Priority") == 0 || strcmp(caso," RealTime") == 0){
+            whiteSpace = FindWhiteSpace(ch,pos + 1);
+            inicio = GetSubstring(ch,pos,whiteSpace);
+            pos = whiteSpace;
+            printf("Inicio  %s \n",inicio);
+        }
+        //DURACAO
+        if(strcmp(caso," RealTime") == 0){
+            whiteSpace = FindWhiteSpace(ch,pos + 1);
+            duracao = GetSubstring(ch,pos,whiteSpace);
+            pos = whiteSpace;
+            printf("Duracao  %s \n",duracao);      
+        }
  
-      if(strcmp(caso," Priority") == 0){
-        //printf("Priority a adicionar %s %d\n",fileName,atoi(inicio)); 
-        priority(fileName,atoi(inicio));
-      }
-      if(strcmp(caso," RealTime") == 0){
-        //printf("Realtime a adicionar %s %d %d\n",fileName,atoi(inicio),atoi(duracao));        
-        realTime(fileName,atoi(inicio),atoi(duracao));
-      }
-      if(strcmp(caso," RoundRobin") == 0){
-        //printf("RoundRobin a adicionar %s \n",fileName);         
-        roundrobin(fileName);
+        if(strcmp(caso," Priority") == 0){
+            //printf("Priority a adicionar %s %d\n",fileName,atoi(inicio)); 
+            priority(fileName,atoi(inicio));
+        }
+        if(strcmp(caso," RealTime") == 0){
+            //printf("Realtime a adicionar %s %d %d\n",fileName,atoi(inicio),atoi(duracao));        
+            realTime(fileName,atoi(inicio),atoi(duracao));
+        }
+        if(strcmp(caso," RoundRobin") == 0){
+            //printf("RoundRobin a adicionar %s \n",fileName);         
+            roundrobin(fileName);
+        }
       }
       strcpy(ch," \0");
-      AtualizaProcesso();      
+      AtualizaProcesso();
+      
+      delay(500);
     }
-    printf("%d \n",((Processo*)LIS_ObterValor(filaDeRealTime))->prioridade);
-    ExibeProcessos(filaDeRealTime);
-    ExibeProcessos(filaDePrioridade);
-    ExibeProcessos(filaDeRoundRobin);
+    
+    //ExibeProcessos(filaDeRealTime);
+    //ExibeProcessos(filaDePrioridade);
+    //ExibeProcessos(filaDeRoundRobin);
     puts ("Fim da leitura");
     close (fpFIFO);
     return 0;
+}
 
-    return 0;
+void delay(int milliseconds)
+{
+    long pause;
+    clock_t now,then;
+
+    pause = milliseconds*(CLOCKS_PER_SEC/1000);
+    now = then = clock();
+    while( (now-then) < pause )
+        now = clock();
+    timeAtual += 0.5;
 }

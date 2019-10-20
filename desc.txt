@@ -1,2 +1,1 @@
-Run priority PR=1
-Run roundRobin
+Run realTime I=0 D=2
