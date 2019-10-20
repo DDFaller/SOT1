@@ -201,7 +201,7 @@ int main(void){
     
     
     
-    while (timer <= 15){
+    while (timer <= 2){
         printf("%d \n",timer);
         command = Interpreter(arq,timer);
         printf("LEN COMMAND %d\n",strlen(command));

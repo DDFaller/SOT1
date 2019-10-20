@@ -31,7 +31,7 @@ const char * vectorNull = {NULL};
 
 typedef struct processo {
 	int inicio;
-	float duracao;
+	int duracao;
 	int prioridade;
 	//Comum para todos
     Escalonadores tipo;
@@ -70,7 +70,6 @@ static Processo * processoExecutando;
 void priority(char * fileName, int priority) {
 	Processo * novoProcesso;
 	novoProcesso = (Processo*)malloc(sizeof(Processo));
-	printf("Adicionando processo de prioridade");
 	novoProcesso->prioridade = priority;
     novoProcesso->fileName = (char*)malloc(sizeof(char) * strlen(fileName));    
     strcpy(novoProcesso->fileName,fileName);
@@ -85,7 +84,8 @@ void roundrobin(char * fileName) {
 	novoProcesso = (Processo*)malloc(sizeof(Processo));
 
 	novoProcesso->tipo = roundRobin;
-	strcpy(novoProcesso->fileName,fileName);
+    novoProcesso->fileName = (char*)malloc(sizeof(char) * strlen(fileName));   	
+    strcpy(novoProcesso->fileName,fileName);
 	novoProcesso->prioridade = NULL;
 	novoProcesso->inicio = NULL;
 	novoProcesso->duracao = configEscalonador->tempoParaRodar;
@@ -103,6 +103,7 @@ void realTime(char * fileName, int init, int duration) {
 
 	novoProcesso->inicio = init;
 	novoProcesso->duracao = duration;
+    //printf("Real time adicionando %d\n",novoProcesso->duracao);
     novoProcesso->fileName = (char*)malloc(sizeof(char) * strlen(fileName));
 	strcpy(novoProcesso->fileName,fileName);
 	novoProcesso->tipo = RealTime;
@@ -261,7 +262,7 @@ void ExibeProcessos(LIS_tppLista pLista){
     printf("---------------Exibicao de processos------------------\n");  
     for(int i =0; i < LIS_TamanhoLista(pLista);i++){
             p = (Processo*)LIS_ObterValor(pLista);
-            printf("%d \t %s \t %d \n",p->id,p->fileName,p->inicio);
+            printf("%d \t %s \t %d\t %d prio> %d\n",p->id,p->fileName,p->inicio,p->duracao,p->prioridade);
             LIS_AvancarElemento(pLista);    
     }
     printf("---------------FIM da Exibicao de processos------------------\n");
@@ -274,8 +275,7 @@ void AdicionaProcesso(LIS_tppLista pLista,Processo * p) {
     
     segmento = shmget(8752, sizeof(int), IPC_CREAT | S_IRUSR | S_IWUSR);
     pid = (int*)shmat(segmento,0,0);
-    *pid = 0;
-    scanf("%c",&ch);        
+    *pid = 0;      
     if(fork() == 0){
         *pid = getpid();
         kill(getpid(),SIGSTOP);
@@ -284,7 +284,6 @@ void AdicionaProcesso(LIS_tppLista pLista,Processo * p) {
     else{
         while(*pid == 0){
         }
-        printf("PID > %d",*pid);
         p->id = *pid;
         LIS_InserirElementoFim(pLista, (void*)p);       
         //AtualizaProcesso();    
@@ -436,27 +435,34 @@ int main(void){
         whiteSpace = FindWhiteSpace(ch,pos + 1);
         inicio = GetSubstring(ch,pos,whiteSpace);
         pos = whiteSpace;
+        printf("Inicio  %s \n",inicio);
       }
       //DURACAO
       if(strcmp(caso," RealTime") == 0){
         whiteSpace = FindWhiteSpace(ch,pos + 1);
         duracao = GetSubstring(ch,pos,whiteSpace);
-        pos = whiteSpace;      
+        pos = whiteSpace;
+        printf("Duracao  %s \n",duracao);      
       }
-      printf("Caso> %s ",caso);
+ 
       if(strcmp(caso," Priority") == 0){
-         priority(fileName,atoi(inicio));
+        //printf("Priority a adicionar %s %d\n",fileName,atoi(inicio)); 
+        priority(fileName,atoi(inicio));
       }
       if(strcmp(caso," RealTime") == 0){
-         realTime(fileName,atoi(inicio),atoi(duracao));
+        //printf("Realtime a adicionar %s %d %d\n",fileName,atoi(inicio),atoi(duracao));        
+        realTime(fileName,atoi(inicio),atoi(duracao));
       }
       if(strcmp(caso," RoundRobin") == 0){
-         roundrobin(fileName);
+        //printf("RoundRobin a adicionar %s \n",fileName);         
+        roundrobin(fileName);
       }
-       
+      strcpy(ch," \0");      
     }
+    printf("%d \n",((Processo*)LIS_ObterValor(filaDeRealTime))->prioridade);
     ExibeProcessos(filaDeRealTime);
     ExibeProcessos(filaDePrioridade);
+    ExibeProcessos(filaDeRoundRobin);
     puts ("Fim da leitura");
     close (fpFIFO);
     return 0;
