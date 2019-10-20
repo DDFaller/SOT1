@@ -41,8 +41,8 @@ typedef struct processo {
 } Processo;
 
 typedef struct constantes{
-	float duracaoRoundRobin;
-	float tempoPorPrioridade;
+	int duracaoRoundRobin;
+	int tempoPorPrioridade;
 	int maxPrioridades;
 	int tempoParaRodar;
 }Constantes;
@@ -56,6 +56,7 @@ typedef struct debugger{
 void priority(char * fileName,int priority);
 void roundrobin(char * fileName);
 void realTime(char * fileName,int inicio,int fim);
+void AdicionaProcesso(LIS_tppLista pLista, Processo * p);
 Processo * BuscaProcessoID(LIS_tppLista pLista,int id);
 Processo * BuscaProcessoTempo(LIS_tppLista pLista,int id);
 Processo * BuscaProcessoPrioritario(LIS_tppLista pLista);
@@ -70,7 +71,7 @@ static Processo * processoExecutando;
 void priority(char * fileName, int priority) {
 	Processo * novoProcesso;
 	novoProcesso = (Processo*)malloc(sizeof(Processo));
-	novoProcesso->prioridade = priority;
+	novoProcesso->prioridade = 0 ;
     novoProcesso->fileName = (char*)malloc(sizeof(char) * strlen(fileName));    
     strcpy(novoProcesso->fileName,fileName);
 	novoProcesso->inicio = NULL;
@@ -83,7 +84,7 @@ void roundrobin(char * fileName) {
 	Processo * novoProcesso;
 	novoProcesso = (Processo*)malloc(sizeof(Processo));
 
-	novoProcesso->tipo = roundRobin;
+	novoProcesso->tipo = 1;
     novoProcesso->fileName = (char*)malloc(sizeof(char) * strlen(fileName));   	
     strcpy(novoProcesso->fileName,fileName);
 	novoProcesso->prioridade = NULL;
@@ -106,7 +107,7 @@ void realTime(char * fileName, int init, int duration) {
     //printf("Real time adicionando %d\n",novoProcesso->duracao);
     novoProcesso->fileName = (char*)malloc(sizeof(char) * strlen(fileName));
 	strcpy(novoProcesso->fileName,fileName);
-	novoProcesso->tipo = RealTime;
+	novoProcesso->tipo = 2;
 	novoProcesso->prioridade = NULL;
     
 	AdicionaProcesso(filaDeRealTime,novoProcesso);
@@ -137,12 +138,12 @@ void PausaProcesso(Processo * p){
 		if(processoExecutando->tipo == prioridade){
 			void * output;
 			p = BuscaProcessoID(filaDePrioridade,processoExecutando->id);
-			LIS_ExcluirElementoOutput(filaDeRoundRobin,&output);
+			LIS_ExcluirElementoOutput(filaDePrioridade,&output);
 			LIS_InserirElementoFim(debugger->processosConcluidos,output);
 		}
 		if(processoExecutando->tipo == RealTime){
 			void * output;
-			p = BuscaProcessoID(filaDePrioridade,processoExecutando->id);
+			p = BuscaProcessoID(filaDeRealTime,processoExecutando->id);
 			LIS_ExcluirElementoOutput(filaDeRoundRobin,&output);
 			LIS_InserirElementoFim(debugger->processosConcluidos,output);
 		
@@ -161,16 +162,21 @@ void PausaProcesso(Processo * p){
 }
 
 void LiberaProcesso(Processo * p){
-	if( p->tipo == prioridade){
-		p->duracao = p->prioridade * configEscalonador->tempoPorPrioridade;
-	}
-	if( p->tipo == roundrobin){
+    char ch;	
+    //printf("%s %d %d %d "p->fileName,p->inicio,p->duracao,p->prioridade);
+    printf("%d",p);    
+    scanf("%c",&ch);    
+    if( p->tipo == 0){//prioridade
+        		
+        p->duracao = p->prioridade * configEscalonador->tempoPorPrioridade;
+        	
+    }
+	if( p->tipo == 1){//roundRobin
 		p->duracao = configEscalonador->duracaoRoundRobin;
 	}
-	if(p->tipo == RealTime){
+	if(p->tipo == 2){//RealTime
 		
 	}
-
     processoExecutando->inicio = timeAtual;    
     processoExecutando = p;
 	p->status = 1;
@@ -197,9 +203,10 @@ void EscalonaRealTime(){
 
 void EscalonaPrioridade(){
     Processo * pendente;
+    char ch;
     pendente = BuscaProcessoPrioritario(filaDeRealTime);    
-   
-    if(processoExecutando == NULL){
+    
+    if(processoExecutando == NULL){        
         LiberaProcesso(pendente); 
     }
     else{
@@ -238,12 +245,18 @@ void EscalonaRoundRobin(){
 
 void AtualizaProcesso(){
     Processo * temp;
-    timeAtual += 1;
+    char ch;    
+    printf("Time atual %d \n",timeAtual);    
+    printf("Atualizando processo filaDeRealTime %d\n",LIS_TamanhoLista(filaDeRealTime));
+    printf("Atualizando processo filaDePrioridade %d\n",LIS_TamanhoLista(filaDePrioridade));
+    printf("Atualizando processo filaDeRoundRobin %d\n",LIS_TamanhoLista(filaDeRoundRobin));
+    
     if(LIS_TamanhoLista(filaDeRealTime) && BuscaProcessoTempo(filaDeRealTime,timeAtual)){
         EscalonaRealTime();    
     }
     else if(LIS_TamanhoLista(filaDePrioridade)){
-        EscalonaPrioridade();    
+        EscalonaPrioridade();
+        
     }
     else{
         EscalonaRoundRobin();
@@ -255,6 +268,7 @@ void AtualizaProcesso(){
     ExibeProcessos(filaDePrioridade);
     printf("Fila de Round Robin \n");
     ExibeProcessos(filaDeRoundRobin);
+    timeAtual += 1;
 }
 
 void ExibeProcessos(LIS_tppLista pLista){
@@ -310,7 +324,7 @@ void init() {
     filaDeRealTime   = LIS_CriarLista(ExcluiProcesso);
 	
 	configEscalonador = (Constantes*)malloc(sizeof(Constantes));
-	configEscalonador->duracaoRoundRobin = 0.5;//float
+	configEscalonador->duracaoRoundRobin = 1;//float
 	configEscalonador->maxPrioridades = 7;//int
 	configEscalonador->tempoPorPrioridade = 2;//float
 	configEscalonador->tempoParaRodar = 60;//int
@@ -345,7 +359,7 @@ Processo * BuscaProcessoTempo(LIS_tppLista pLista, int time){
         }    
         LIS_AvancarElemento(pLista);
     }
-    return NULL;    
+    return 0;    
 }
 
 Processo * BuscaProcessoPrioritario(LIS_tppLista pLista){
@@ -353,12 +367,14 @@ Processo * BuscaProcessoPrioritario(LIS_tppLista pLista){
 	int minPri = configEscalonador->maxPrioridades + 1;
 	Processo * prioritario = NULL;
     for(int i =0;i < LIS_TamanhoLista(pLista);i++){
-        atual = (Processo*)LIS_ObterValor(pLista);            
+        atual = (Processo*)LIS_ObterValor(pLista);
         if(atual->prioridade < minPri){
             minPri = atual->prioridade;        
 			prioritario = atual;
         }    
-        LIS_AvancarElemento(pLista);
+        if(LIS_TamanhoLista(pLista) != 1){
+            LIS_AvancarElemento(pLista);
+        }
     }
     return prioritario;    
 }
@@ -419,7 +435,7 @@ int main(void){
       whiteSpace = FindWhiteSpace(ch,0);
       timer = atoi(GetSubstring(ch,0,whiteSpace));
       pos = whiteSpace;
-      
+      timeAtual = timer;
       //CASO
       whiteSpace = FindWhiteSpace(ch,pos + 1);
       caso = GetSubstring(ch,pos,whiteSpace);
@@ -457,7 +473,8 @@ int main(void){
         //printf("RoundRobin a adicionar %s \n",fileName);         
         roundrobin(fileName);
       }
-      strcpy(ch," \0");      
+      strcpy(ch," \0");
+      AtualizaProcesso();      
     }
     printf("%d \n",((Processo*)LIS_ObterValor(filaDeRealTime))->prioridade);
     ExibeProcessos(filaDeRealTime);

@@ -10,12 +10,10 @@ void signalHandler(int sig);
 int main(int argc, char * argv[]){
 	int input = 0;
 		
-	signal(SIGUSR1,signalHandler);
 	printf("Vivo \n");
 	
-	while( input < 1000){
-		printf("INPUT %d:P\t",input);
-		input += 1;
+	while( 1){
+		printf("Prioridade \n");
 		sleep(1);
 	}
 	

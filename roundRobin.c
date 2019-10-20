@@ -8,15 +8,10 @@
 void signalHandler(int sig);
 
 int main(int argc, char * argv[]){
-	time_t  lastTime= time(NULL);
 	while(1){
-		if(time(NULL) - lastTime >= 1){
-			printf(" R ");
-			lastTime = time(NULL);
-		}
+	    printf(" R ");
+        sleep(1);
 	}
-	
-	
 	return 0;
 }
 
