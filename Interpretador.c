@@ -137,41 +137,42 @@ char * Interpreter(FILE * f, int seconds) {
 		case(prioridade):
             printf("Adicionando processo  na fila de Prioridade \n");		
             strcat(command," Priority");
-            printf("%s \n",command);            
+            //printf("%s \n",command);            
             strcat(command,fileName);
             strcat(command,whitespace);
-            printf("%s \n",command);      
+            //printf("%s \n",command);      
             strcat(command,firstDuration);
-            printf("%s \n",command);            
+            strcat(command,whitespace);
+            //printf("%s \n",command);            
             break;
 		case(roundRobin):
             printf("Adicionando processo  na fila de Round Robin \n");
 			strcat(command," RoundRobin");
-            printf("%s \n",command);           
+            //printf("%s \n",command);           
             strcat(command,fileName);
-            printf("%s \n",command);
+            //printf("%s \n",command);
             break;
 		case(RealTime):
             printf("Adicionando processo na fila de Real Time \n");
 			strcat(command," RealTime");
-            printf("%s \n",command);            
+            //printf("%s \n",command);            
             strcat(command,fileName);
             strcat(command,whitespace);
-            printf("%s \n",command);   
+            //printf("%s \n",command);   
             strcat(command,firstDuration);
             strcat(command,whitespace);
-            printf("%s \n",command);            
+            //printf("%s \n",command);            
 
             strcat(command,secondDuration);
             strcat(command,whitespace);
-            printf("%s\n",secondsToStr);            
-            printf("%s \n",command);
+            //printf("%s\n",secondsToStr);            
+            //printf("%s \n",command);
 			break;
 		default:
 			break;
 	}
-    printf("TIPO\tNAME\tOPR\tInicio\tDuracao");
-    printf("%d\t%s\t%s\t%d\t%d\t\n",type, fileName, opr, firstDuration, secondDuration);
+    //printf("TIPO\tNAME\tOPR\tInicio\tDuracao");
+    //printf("%d\t%s\t%s\t%d\t%d\t\n",type, fileName, opr, firstDuration, secondDuration);
     printf("? %s ?\n",command);	
     printf("-------------------------------------------\n");
         
@@ -200,7 +201,7 @@ int main(void){
     
     
     
-    while (timer <= 3){
+    while (timer <= 15){
         printf("%d \n",timer);
         command = Interpreter(arq,timer);
         printf("LEN COMMAND %d\n",strlen(command));

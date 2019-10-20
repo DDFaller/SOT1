@@ -69,19 +69,20 @@ static Processo * processoExecutando;
 
 void priority(char * fileName, int priority) {
 	Processo * novoProcesso;
-	novoProcesso = (Processo*)malloc(sizeof(Processo*));
-	
+	novoProcesso = (Processo*)malloc(sizeof(Processo));
+	printf("Adicionando processo de prioridade");
 	novoProcesso->prioridade = priority;
+    novoProcesso->fileName = (char*)malloc(sizeof(char) * strlen(fileName));    
     strcpy(novoProcesso->fileName,fileName);
 	novoProcesso->inicio = NULL;
-	novoProcesso->duracao = prioridade * configEscalonador->tempoPorPrioridade;
+	novoProcesso->duracao = priority * configEscalonador->tempoPorPrioridade;
 	novoProcesso->tipo = prioridade;
 
 	AdicionaProcesso(filaDePrioridade,novoProcesso);
 }
 void roundrobin(char * fileName) {
 	Processo * novoProcesso;
-	novoProcesso = (Processo*)malloc(sizeof(Processo*));
+	novoProcesso = (Processo*)malloc(sizeof(Processo));
 
 	novoProcesso->tipo = roundRobin;
 	strcpy(novoProcesso->fileName,fileName);
@@ -98,7 +99,7 @@ void realTime(char * fileName, int init, int duration) {
         return;
     }	
     Processo * novoProcesso;
-	novoProcesso = (Processo*)malloc(sizeof(Processo*));
+	novoProcesso = (Processo*)malloc(sizeof(Processo));
 
 	novoProcesso->inicio = init;
 	novoProcesso->duracao = duration;
@@ -257,13 +258,13 @@ void AtualizaProcesso(){
 
 void ExibeProcessos(LIS_tppLista pLista){
     Processo * p;  
-    printf("---------------Exibicao de processos------------------");  
+    printf("---------------Exibicao de processos------------------\n");  
     for(int i =0; i < LIS_TamanhoLista(pLista);i++){
             p = (Processo*)LIS_ObterValor(pLista);
             printf("%d \t %s \t %d \n",p->id,p->fileName,p->inicio);
             LIS_AvancarElemento(pLista);    
     }
-    printf("---------------FIM da Exibicao de processos------------------");
+    printf("---------------FIM da Exibicao de processos------------------\n");
 }
 
 void AdicionaProcesso(LIS_tppLista pLista,Processo * p) {
@@ -410,14 +411,16 @@ int main(void){
         fprintf (stderr, "Erro ao abrir a FIFO %s\n", FIFO);
         return -2;
     }
+    ExibeProcessos(filaDePrioridade);    
     puts ("Começando a ler...");
     while (read (fpFIFO, &ch, sizeof(ch)) > 0){
       pos = 0;
+      printf("Comando recebido > %s \n",ch);
       //TIMER
       whiteSpace = FindWhiteSpace(ch,0);
       timer = atoi(GetSubstring(ch,0,whiteSpace));
       pos = whiteSpace;
-        
+      
       //CASO
       whiteSpace = FindWhiteSpace(ch,pos + 1);
       caso = GetSubstring(ch,pos,whiteSpace);
@@ -450,9 +453,10 @@ int main(void){
       if(strcmp(caso," RoundRobin") == 0){
          roundrobin(fileName);
       }
-   
+       
     }
     ExibeProcessos(filaDeRealTime);
+    ExibeProcessos(filaDePrioridade);
     puts ("Fim da leitura");
     close (fpFIFO);
     return 0;

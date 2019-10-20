@@ -1,1 +1,3 @@
 Run realTime I=5 D=50
+Run priority PR=1
+
