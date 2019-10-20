@@ -1,4 +1,3 @@
-#include "Escalonador.h"
 #include "Lista.h"
 #include<sys/ipc.h>
 #include<sys/shm.h>
@@ -8,6 +7,7 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include <fcntl.h>
+#include<string.h>
 #if defined TIMEFUNCTION
 #include <time.h>
 #else
@@ -28,6 +28,14 @@ static int timeAtual;
 #endif
 
 const char * vectorNull = {NULL};
+
+typedef enum
+{
+	prioridade,
+	roundRobin,
+	RealTime,
+	Unknown
+}Escalonadores;
 
 typedef struct processo {
 	int inicio;
@@ -71,12 +79,12 @@ static Processo * processoExecutando;
 void priority(char * fileName, int priority) {
 	Processo * novoProcesso;
 	novoProcesso = (Processo*)malloc(sizeof(Processo));
-	novoProcesso->prioridade = 0 ;
+	novoProcesso->prioridade = priority ;
     novoProcesso->fileName = (char*)malloc(sizeof(char) * strlen(fileName));    
     strcpy(novoProcesso->fileName,fileName);
 	novoProcesso->inicio = NULL;
 	novoProcesso->duracao = priority * configEscalonador->tempoPorPrioridade;
-	novoProcesso->tipo = prioridade;
+	novoProcesso->tipo = 0;
 
 	AdicionaProcesso(filaDePrioridade,novoProcesso);
 }
@@ -162,14 +170,10 @@ void PausaProcesso(Processo * p){
 }
 
 void LiberaProcesso(Processo * p){
-    char ch;	
-    //printf("%s %d %d %d "p->fileName,p->inicio,p->duracao,p->prioridade);
-    printf("%d",p);    
-    scanf("%c",&ch);    
+    char ch;	        
+        
     if( p->tipo == 0){//prioridade
-        		
         p->duracao = p->prioridade * configEscalonador->tempoPorPrioridade;
-        	
     }
 	if( p->tipo == 1){//roundRobin
 		p->duracao = configEscalonador->duracaoRoundRobin;
@@ -177,9 +181,13 @@ void LiberaProcesso(Processo * p){
 	if(p->tipo == 2){//RealTime
 		
 	}
-    processoExecutando->inicio = timeAtual;    
     processoExecutando = p;
-	p->status = 1;
+    processoExecutando->inicio = timeAtual;    
+    printf("/%s/ %d %d %d",p->fileName,p->inicio,p->duracao,p->prioridade);
+    scanf("%c",&ch);
+    
+    
+    p->status = 1;
 	kill(p->id,SIGCONT);       
 }
 
@@ -204,8 +212,10 @@ void EscalonaRealTime(){
 void EscalonaPrioridade(){
     Processo * pendente;
     char ch;
-    pendente = BuscaProcessoPrioritario(filaDeRealTime);    
-    
+    pendente = BuscaProcessoPrioritario(filaDePrioridade);    
+    if(pendente == NULL){
+        printf("Erro na funcao BuscaProcessoPrioritario \n");   
+    }
     if(processoExecutando == NULL){        
         LiberaProcesso(pendente); 
     }
@@ -365,13 +375,13 @@ Processo * BuscaProcessoTempo(LIS_tppLista pLista, int time){
 Processo * BuscaProcessoPrioritario(LIS_tppLista pLista){
     Processo * atual;
 	int minPri = configEscalonador->maxPrioridades + 1;
-	Processo * prioritario = NULL;
+	Processo * prioritario = (Processo*)malloc(sizeof(Processo));
     for(int i =0;i < LIS_TamanhoLista(pLista);i++){
         atual = (Processo*)LIS_ObterValor(pLista);
         if(atual->prioridade < minPri){
             minPri = atual->prioridade;        
-			prioritario = atual;
-        }    
+			*prioritario = *atual;
+        }       
         if(LIS_TamanhoLista(pLista) != 1){
             LIS_AvancarElemento(pLista);
         }
@@ -443,7 +453,7 @@ int main(void){
       
       //FILENAME
       whiteSpace = FindWhiteSpace(ch,pos + 1);
-      fileName = GetSubstring(ch,pos,whiteSpace);
+      fileName = GetSubstring(ch,pos + 1,whiteSpace);
       pos = whiteSpace;
       
       //INICIO
