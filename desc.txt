@@ -1,1 +1,1 @@
-Run realTime I=0 D=2
+Run priority PR=1

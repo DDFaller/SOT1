@@ -36,7 +36,7 @@ typedef enum
 
 typedef struct processo {
 	int inicio;
-	int duracao;
+	float duracao;
 	int prioridade;
 	//Comum para todos
     Escalonadores tipo;
@@ -46,7 +46,7 @@ typedef struct processo {
 } Processo;
 
 typedef struct constantes{
-	int duracaoRoundRobin;
+	float duracaoRoundRobin;
 	int tempoPorPrioridade;
 	int maxPrioridades;
 	int tempoParaRodar;
@@ -108,7 +108,7 @@ void realTime(char * fileName, int init, int duration) {
 	novoProcesso = (Processo*)malloc(sizeof(Processo));
 
 	novoProcesso->inicio = init;
-	novoProcesso->duracao = duration;
+	novoProcesso->duracao = (float)duration;
     //printf("Real time adicionando %d\n",novoProcesso->duracao);
     novoProcesso->fileName = (char*)malloc(sizeof(char) * strlen(fileName));
 	strcpy(novoProcesso->fileName,fileName);
@@ -120,7 +120,7 @@ void realTime(char * fileName, int init, int duration) {
 
 void PausaProcesso(Processo * p){
     int killStatus;//0:Enviou sinal 1:Falhou
-	
+	char c;
 	if( p->tipo == prioridade){
 		p->prioridade += 1;
 	}
@@ -136,10 +136,15 @@ void PausaProcesso(Processo * p){
 	
 	}
 	p->status = 0;
-	killStatus = kill(p->id,SIGSTOP);
-	
+    printf("Prekill");
+    	
+    killStatus = kill(p->id,SIGSTOP);
+    scanf("%c",&c);	
+    printf("Poskill");
 	if(killStatus == 1){//Envio de sinal falhou supomos que o processo terminou
 		Processo * p;
+        char ch;
+        printf("Processo concluido");
 		if(processoExecutando->tipo == prioridade){
 			void * output;
 			p = BuscaProcessoID(filaDePrioridade,processoExecutando->id);
@@ -148,8 +153,10 @@ void PausaProcesso(Processo * p){
 		}
 		if(processoExecutando->tipo == RealTime){
 			void * output;
-			p = BuscaProcessoID(filaDeRealTime,processoExecutando->id);
+            scanf("%c",&ch);			
+            p = BuscaProcessoID(filaDeRealTime,processoExecutando->id);
 			LIS_ExcluirElementoOutput(filaDeRoundRobin,&output);
+            printf("Concluido %s",((Processo*)output)->fileName);
 			LIS_InserirElementoFim(debugger->processosConcluidos,output);
 		
 		}
@@ -163,13 +170,13 @@ void PausaProcesso(Processo * p){
 			ResetaCorrente(filaDeRoundRobin);
 		}
 	}
-	
+	processoExecutando = NULL;
 }
 
 void LiberaProcesso(Processo * p){
         
     if( p->tipo == 0){//prioridade
-        p->duracao = p->prioridade * configEscalonador->tempoPorPrioridade;
+        p->duracao = (float)(p->prioridade * configEscalonador->tempoPorPrioridade);
     }
 	if( p->tipo == 1){//roundRobin
 		p->duracao = configEscalonador->duracaoRoundRobin;
@@ -179,7 +186,7 @@ void LiberaProcesso(Processo * p){
 	}
     processoExecutando = p;
     processoExecutando->inicio = timeAtual;    
-    printf("/%s/ %d %d %d",p->fileName,p->inicio,p->duracao,p->prioridade);
+    printf("/%s/ %d %f %d",p->fileName,p->inicio,p->duracao,p->prioridade);
     
     
     p->status = 1;
@@ -265,25 +272,29 @@ void AtualizaProcesso(){
             PausaProcesso(processoExecutando);
         }
     }
-    
-    if(LIS_TamanhoLista(filaDeRealTime) && BuscaProcessoTempo(filaDeRealTime,timeAtual)){
-        EscalonaRealTime();    
-    }
-    else if(LIS_TamanhoLista(filaDePrioridade)){
-        EscalonaPrioridade();
+    if(processoExecutando == NULL){
+        if(LIS_TamanhoLista(filaDeRealTime) && BuscaProcessoTempo(filaDeRealTime,timeAtual)){
+            EscalonaRealTime();    
+        }
+        else if(LIS_TamanhoLista(filaDePrioridade)){
+            EscalonaPrioridade();
         
+        }
+        else{
+            EscalonaRoundRobin();
+        }
     }
-    else{
-        EscalonaRoundRobin();
-    }
-
     //printf("Fila de Real Time \n");
     //ExibeProcessos(filaDeRealTime);
     //printf("Fila de Prioridade \n");
     //ExibeProcessos(filaDePrioridade);
     //printf("Fila de Round Robin \n");
     //ExibeProcessos(filaDeRoundRobin);
-    printf("%f - %d < %d \n",timeAtual,processoExecutando-> inicio,processoExecutando-> duracao);
+    if(processoExecutando != NULL){    
+        printf("%f - %d < %d \n",timeAtual,processoExecutando-> inicio,processoExecutando-> duracao);
+    }    
+    printf("----------------------Processos Concluidos--------------------------");
+    ExibeProcessos(debugger->processosConcluidos);
 }
 
 void ExibeProcessos(LIS_tppLista pLista){
@@ -291,7 +302,7 @@ void ExibeProcessos(LIS_tppLista pLista){
     printf("---------------Exibicao de processos------------------\n");  
     for(int i =0; i < LIS_TamanhoLista(pLista);i++){
             p = (Processo*)LIS_ObterValor(pLista);
-            printf("%d \t %s \t %d\t %d prio> %d\n",p->id,p->fileName,p->inicio,p->duracao,p->prioridade);
+            printf("%d \t %s \t %f\t %d prio> %d\n",p->id,p->fileName,p->inicio,p->duracao,p->prioridade);
             LIS_AvancarElemento(pLista);    
     }
     printf("---------------FIM da Exibicao de processos------------------\n");
@@ -339,7 +350,7 @@ void init() {
     filaDeRealTime   = LIS_CriarLista(ExcluiProcesso);
 	
 	configEscalonador = (Constantes*)malloc(sizeof(Constantes));
-	configEscalonador->duracaoRoundRobin = 1;//float
+	configEscalonador->duracaoRoundRobin = 0.5;//float
 	configEscalonador->maxPrioridades = 7;//int
 	configEscalonador->tempoPorPrioridade = 2;//float
 	configEscalonador->tempoParaRodar = 60;//int
@@ -356,7 +367,6 @@ Processo * BuscaProcessoID(LIS_tppLista pLista,int id){
 		atual = (Processo*)LIS_ObterValor(pLista);
 		
 		if( atual->id == id){
-			ResetaCorrente(pLista);
 			return atual;
 		}
 		LIS_AvancarElemento(pLista);
