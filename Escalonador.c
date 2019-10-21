@@ -121,12 +121,11 @@ void realTime(char * fileName, int init, int duration) {
 void PausaProcesso(Processo * p){
     int killStatus;//0:Enviou sinal 1:Falhou
 	char c;
-    printf("Processo pausando %s %d \n",p->fileName,p->prioridade);
 	if( p->tipo == 0){
-		if(p->prioridade < configEscalonador->maxPrioridades )
+		if(p->prioridade < configEscalonador->maxPrioridades ){
             p->prioridade = p->prioridade +  1;
+        }
 	}
-    printf("Processo pausando %s %d \n",p->fileName,p->prioridade);
 	if(p->tipo == 2){
 		if(timeAtual < p->inicio + p->duracao){
 			printf("Erro processo %s,em Real Time foi pausado quando não deveria",p->fileName);
@@ -138,6 +137,7 @@ void PausaProcesso(Processo * p){
 	if(p->tipo == 1){
 	
 	}
+    
 	p->status = 0;
     	
     killStatus = kill(p->id,SIGSTOP);
@@ -153,8 +153,7 @@ void PausaProcesso(Processo * p){
 			LIS_InserirElementoFim(debugger->processosConcluidos,output);
 		}
 		if(processoExecutando->tipo == 2){
-			void * output;
-            scanf("%c",&ch);			
+			void * output;			
             p = BuscaProcessoID(filaDeRealTime,processoExecutando->id);
 			LIS_ExcluirElementoOutput(filaDeRoundRobin,&output);
             printf("Concluido %s",((Processo*)output)->fileName);
@@ -171,7 +170,6 @@ void PausaProcesso(Processo * p){
 			ResetaCorrente(filaDeRoundRobin);
 		}
 	}
-	processoExecutando = NULL;
 }
 
 void LiberaProcesso(Processo * p){
@@ -187,7 +185,7 @@ void LiberaProcesso(Processo * p){
 	}
     processoExecutando = p;
     processoExecutando->inicio = timeAtual;    
-    //printf("/%s/ %f %f %d",p->fileName,p->inicio,p->duracao,p->prioridade);
+    printf("Liberando %d /%s/ %f %f",p->prioridade,p->fileName,p->inicio,p->duracao);
     
     
     p->status = 1;
@@ -223,6 +221,7 @@ void EscalonaPrioridade(){
         LiberaProcesso(pendente); 
     }
     else{
+        printf("ProcessoExecutando deveria ser nulo \n");
         if(timeAtual - processoExecutando->inicio >= processoExecutando->duracao){
             //PausaProcesso(processoExecutando);
             LiberaProcesso(pendente);
@@ -261,18 +260,19 @@ void AtualizaProcesso(){
     char ch;    
     //printf("Time atual %d \n",timeAtual);    
     //printf("Atualizando processo filaDeRealTime %d\n",LIS_TamanhoLista(filaDeRealTime));
-    //printf("Atualizando processo filaDePrioridade %d\n",LIS_TamanhoLista(filaDePrioridade));
+    printf("Atualizando processo filaDePrioridade %d\n",LIS_TamanhoLista(filaDePrioridade));
     //printf("Atualizando processo filaDeRoundRobin %d\n",LIS_TamanhoLista(filaDeRoundRobin));
     if(processoExecutando != NULL){
-        if(timeAtual - processoExecutando-> inicio < processoExecutando->duracao){
-            //printf("Processo Rodando %s %f %d\n",processoExecutando->fileName,processoExecutando->id,processoExecutando->status);
+        if((timeAtual - processoExecutando->inicio) < processoExecutando->duracao){
             //printf("%f - %f < %f \n",timeAtual,processoExecutando-> inicio,processoExecutando-> duracao);            
             return;
         }
         else{
             PausaProcesso(processoExecutando);
+            processoExecutando = NULL;
         }
     }
+    
     if(processoExecutando == NULL){
         if(LIS_TamanhoLista(filaDeRealTime) && BuscaProcessoTempo(filaDeRealTime,timeAtual)){
             EscalonaRealTime();    
@@ -392,12 +392,12 @@ Processo * BuscaProcessoTempo(LIS_tppLista pLista, int time){
 Processo * BuscaProcessoPrioritario(LIS_tppLista pLista){
     Processo * atual;
 	int minPri = configEscalonador->maxPrioridades + 1;
-	Processo * prioritario = (Processo*)malloc(sizeof(Processo));
+	Processo * prioritario;
     for(int i =0;i < LIS_TamanhoLista(pLista);i++){
         atual = (Processo*)LIS_ObterValor(pLista);
         if(atual->prioridade < minPri){
             minPri = atual->prioridade;        
-			*prioritario = *atual;
+			prioritario = atual;
         }       
         if(LIS_TamanhoLista(pLista) != 1){
             LIS_AvancarElemento(pLista);
@@ -505,7 +505,7 @@ int main(void){
       strcpy(ch," \0");
       AtualizaProcesso();
       
-      delay(500);
+      delay(5000);
     }
     
     //ExibeProcessos(filaDeRealTime);
@@ -523,7 +523,8 @@ void delay(int milliseconds)
 
     pause = milliseconds*(CLOCKS_PER_SEC/1000);
     now = then = clock();
-    while( (now-then) < pause )
+    while( (now-then) < pause ){
         now = clock();
+    }
     timeAtual += 0.5;
 }
