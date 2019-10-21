@@ -2,7 +2,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include "Interpretador.h"
-#include "Escalonador.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
@@ -59,7 +58,7 @@ char ReadWord(FILE * f, char ** word) {
 	strcpy(name,nameHolder);
 	free(nameHolder);
 	*word = name;
-    printf("Palavra lida %s ultimo caracter ?%c? \n",name,c);
+    //printf("Palavra lida %s ultimo caracter ?%c? \n",name,c);
 	return c;
 }
 
@@ -73,7 +72,8 @@ Escalonadores ReadLine(FILE * f, char ** fileName, char ** opr,char ** firstDura
 	
 	
 	fread(cmp, sizeof(char), 3, f);
-	if (strcmp(cmp, "Run") || strcmp(cmp, "run")) {
+    printf("%s \n",cmp); 
+    if (strcmp(cmp, "Run") == 0 || strcmp(cmp, "run")== 0) {
 		lastChar = ReadWord(f, &t_fileName);
 		*fileName = t_fileName;
         
@@ -86,7 +86,7 @@ Escalonadores ReadLine(FILE * f, char ** fileName, char ** opr,char ** firstDura
 		
 		lastChar = ReadWord(f, &t_operator);
 
-            printf("Operador %s \n",t_operator);           
+        printf("Operador %s \n",t_operator);           
 		*opr = t_operator;
 		if (lastChar == '=') {
 			lastChar = ReadWord(f, &t_firstDuration);
@@ -114,8 +114,9 @@ Escalonadores ReadLine(FILE * f, char ** fileName, char ** opr,char ** firstDura
         printf("Second Duration> %s\n",*secondDuration);		
         return RealTime;
 	}	
+    return Unknown;
 }
-char * Interpreter(FILE * f, int seconds) {
+char * Interpreter(FILE * f, int seconds, Escalonadores * caso) {
 	char * palavra;
 	char * fileName;
 	char * opr;
@@ -127,7 +128,11 @@ char * Interpreter(FILE * f, int seconds) {
     command = (char*)malloc(sizeof(char)*30);
 	Escalonadores type;
 	type = ReadLine(f,&fileName,&opr,&firstDuration,&secondDuration);
-        
+    for (int i = 0;i < 29;i++){
+        command[i] = ' ';
+    }
+    command[29] = '\0';
+
     secondsToStr[0] = seconds + 48;
     secondsToStr[1] = '\0';
 
@@ -173,8 +178,7 @@ char * Interpreter(FILE * f, int seconds) {
 	}
     //printf("TIPO\tNAME\tOPR\tInicio\tDuracao");
     //printf("%d\t%s\t%s\t%d\t%d\t\n",type, fileName, opr, firstDuration, secondDuration);
-    printf("? %s ?\n",command);	
-    printf("-------------------------------------------\n");
+    *caso = type;
         
     return command;
 }
@@ -182,9 +186,11 @@ char * Interpreter(FILE * f, int seconds) {
 int main(void){
     int fpFIFO;
     char ch;
-    FILE * arq;    
-    int timer = 0;         
+    FILE * arq;            
     char * command;
+    int timer = 0;
+    Escalonadores escalonadorType;
+    
     if (access(FIFO, F_OK) == -1) {
         if (mkfifo (FIFO, S_IRUSR | S_IWUSR) != 0) {
             fprintf (stderr, "Erro ao criar FIFO %s\n", FIFO);
@@ -201,14 +207,18 @@ int main(void){
     
     
     
-    while (timer <= 2){
+    while (1){
         printf("%d \n",timer);
-        command = Interpreter(arq,timer);
-        printf("LEN COMMAND %d\n",strlen(command));
+        command = Interpreter(arq,timer,&escalonadorType);
+        if(escalonadorType == Unknown){
+            break;        
+        }
+        printf("\n LEN COMMAND %d\n",strlen(command));
         write(fpFIFO,command,strlen(command));    
-        printf("\n COMANDO %s",command);        
+        printf("\n COMANDO %s\n",command);        
         sleep(1);
         timer += 1; 
+        free(command);
     } 
    
     

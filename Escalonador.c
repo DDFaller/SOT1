@@ -435,9 +435,10 @@ int FindWhiteSpace(char * palavra, int idx){
     return max;
 }
 
-void ParaProcessos(int signo) {
-	
-	//kill(p->id, SIGSTOP);
+void ParaProcessos() {
+	if(processoExecutando != NULL){
+	    kill(processoExecutando->id, SIGSTOP);
+    }
 }
 
 void delay(int milliseconds);
@@ -515,6 +516,7 @@ int main(void){
     }
     printf("----------------------Processos Concluidos--------------------------\n");
     ExibeProcessos(debugger->processosConcluidos);
+    ParaProcessos();
     //ExibeProcessos(filaDeRealTime);
     //ExibeProcessos(filaDePrioridade);
     //ExibeProcessos(filaDeRoundRobin);
