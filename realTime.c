@@ -10,11 +10,9 @@ void signalHandler(int sig);
 int main(int argc, char * argv[]){
 	int input = 0;
 		
-	printf("Vivo \n");
-	
 	while( 1){
-		printf("RealTImejfkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk \n");
-		sleep(1);
+		printf("/Eu sou a saida do Real Time/\n");
+		usleep(40000);
 	}
 	
 	

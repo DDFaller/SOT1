@@ -56,6 +56,7 @@ typedef struct constantes{
 
 typedef struct debugger{
 	LIS_tppLista processosConcluidos;
+	LIS_tppLista processosIncompletos;
 }Debugger;
 
 void priority(char * fileName,int priority);
@@ -143,30 +144,21 @@ void PausaProcesso(Processo * p){
     	
     killStatus = kill(p->id,SIGSTOP);
     
-    if(killStatus == 1 || p->tipo == 2){//Envio de sinal falhou supomos que o processo terminou
+    if(killStatus == 1 || p->tipo == RealTime){//Envio de sinal falhou supomos que o processo terminou
 		Processo * temp;
         char ch;
         
-        if(p->tipo == 0){
+        if(p->tipo == prioridade){
 			void * output;
+			
 			temp = BuscaProcessoID(filaDePrioridade,p->id);
 			LIS_ExcluirElementoOutput(filaDePrioridade,&output);
 			LIS_InserirElementoFim(debugger->processosConcluidos,output);
 		}
-		if(p->tipo == 2){
-			void * output;			
-            Processo * leitor;
-            kill(p->id,SIGKILL);            
-            temp = BuscaProcessoID(filaDeRealTime,p->id);
-			LIS_ExcluirElementoOutput(filaDeRealTime,&output);
-            
-            leitor = (Processo*)output;            			
-            printf("Concluido /%s/",leitor->fileName);        
-            LIS_InserirElementoFim(debugger->processosConcluidos,output);
 		
-		}
-		if(p->tipo == 1){
+		if(p->tipo == roundRobin){
 			void * output;
+			
 			SalvaCorrente(filaDeRoundRobin);
 			
 			temp = BuscaProcessoID(filaDeRoundRobin,p->id);
@@ -175,6 +167,19 @@ void PausaProcesso(Processo * p){
 			
             ResetaCorrente(filaDeRoundRobin);
 		}
+		
+		if(p->tipo == RealTime){
+			void * output;			
+            Processo * leitor;
+            
+            kill(p->id,SIGKILL);
+                        
+            temp = BuscaProcessoID(filaDeRealTime,p->id);
+			LIS_ExcluirElementoOutput(filaDeRealTime,&output);
+            LIS_InserirElementoFim(debugger->processosConcluidos,output);
+		
+		}
+		
 	}
 }
 
@@ -307,13 +312,12 @@ void AtualizaProcesso(){
 
 void ExibeProcessos(LIS_tppLista pLista){
     Processo * p;  
-    printf("---------------Exibicao de processos------------------\n");  
     for(int i =0; i < LIS_TamanhoLista(pLista);i++){
             p = (Processo*)LIS_ObterValor(pLista);
             printf("%d \t %s \t %f\t %f \n",p->id,p->fileName,p->inicio,p->duracao);
             LIS_AvancarElemento(pLista);    
     }
-    printf("---------------FIM da Exibicao de processos------------------\n");
+    printf("\n---------------FIM da Exibicao de processos------------------\n");
 }
 
 void AdicionaProcesso(LIS_tppLista pLista,Processo * p) {
@@ -361,10 +365,12 @@ void init() {
 	configEscalonador->duracaoRoundRobin = 0.5;//float
 	configEscalonador->maxPrioridades = 7;//int
 	configEscalonador->tempoPorPrioridade = 2;//float
-	configEscalonador->tempoParaRodar = 3;//int
+	configEscalonador->tempoParaRodar = 60;//int
 
 	debugger = (Debugger*)malloc(sizeof(Debugger));
+	
 	debugger->processosConcluidos = LIS_CriarLista(ExcluiProcesso);
+	debugger->processosIncompletos = LIS_CriarLista(ExcluiProcesso);
 	//signal(SIGSTOP,ParaProcessos)
 }
 
@@ -435,10 +441,21 @@ int FindWhiteSpace(char * palavra, int idx){
     return max;
 }
 
-void ParaProcessos() {
-	if(processoExecutando != NULL){
-	    kill(processoExecutando->id, SIGSTOP);
-    }
+void ParaProcessos(LIS_tppLista pLista) {
+	Processo * temp;
+	int i;
+	printf("Tamanho Lista %d \n",LIS_TamanhoLista(pLista));
+	for(i = 0;i< LIS_TamanhoLista(pLista);){
+		void * output;
+		temp = (Processo*)LIS_ObterValor(pLista);
+		
+		kill(temp->id,SIGKILL);
+		printf("Temp ID %d \n",temp->id);
+		LIS_ExcluirElementoOutput(pLista,&output);
+		LIS_InserirElementoFim(debugger->processosIncompletos,output);
+		LIS_AvancarElemento(pLista);
+		i++;
+	}
 }
 
 void delay(int milliseconds);
@@ -449,6 +466,7 @@ int main(void){
     int timer = 0,pos = 0,whiteSpace = 0;
     char * caso,*fileName,*inicio,*duracao;   
     init();    
+    
     if (access(FIFO, F_OK) == -1) {
         if (mkfifo (FIFO, S_IRUSR | S_IWUSR) != 0) {
             fprintf (stderr, "Erro ao criar FIFO %s\n", FIFO);
@@ -460,13 +478,14 @@ int main(void){
         fprintf (stderr, "Erro ao abrir a FIFO %s\n", FIFO);
         return -2;
     }
-    ExibeProcessos(filaDePrioridade);    
+     
     puts ("Começando a ler...");
     //while  (read (fpFIFO, &ch, sizeof(ch)) > 0){
     while(timeAtual < 4){    
       if( (timeAtual -(int)timeAtual) == 0  && read(fpFIFO,&ch,sizeof(ch))> 0){
         pos = 0;
         printf("Comando recebido > %s \n",ch);
+       
         //TIMER
         whiteSpace = FindWhiteSpace(ch,0);
         timer = atoi(GetSubstring(ch,0,whiteSpace));
@@ -508,15 +527,22 @@ int main(void){
             //printf("RoundRobin a adicionar %s \n",fileName);         
             roundrobin(fileName);
         }
+        
+        strcpy(ch," \0");
+        printf("Comando limpo > %s \n",ch);
       }
       strcpy(ch," \0");
       AtualizaProcesso();
       
       delay(500);
     }
+    ParaProcessos(filaDePrioridade);
+    ParaProcessos(filaDeRoundRobin);
+    ParaProcessos(filaDeRealTime);
     printf("----------------------Processos Concluidos--------------------------\n");
     ExibeProcessos(debugger->processosConcluidos);
-    ParaProcessos();
+    printf("----------------------Processos Incompletos-------------------------\n");
+    ExibeProcessos(debugger->processosIncompletos);
     //ExibeProcessos(filaDeRealTime);
     //ExibeProcessos(filaDePrioridade);
     //ExibeProcessos(filaDeRoundRobin);

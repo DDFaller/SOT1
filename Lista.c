@@ -546,7 +546,7 @@ LIS_tpCondRet LIS_AvancarElementoCorrente(LIS_tppLista pLista,
 		pElem = pLista->pElemCorr;
 		for (i = numElem; i > 0; i--)
 		{
-			if (pElem->pProx == NULL) {
+			if (pElem == NULL) {
 				pElem = pLista->pOrigemLista;
 			}
 			else
@@ -554,7 +554,7 @@ LIS_tpCondRet LIS_AvancarElementoCorrente(LIS_tppLista pLista,
 				pElem = pElem->pProx;
 			}
 		} /* for */
-
+		
 		pLista->pElemCorr = pElem;
 		return LIS_CondRetOK;
 		
@@ -670,7 +670,7 @@ void LiberarElementoOutput(LIS_tppLista   pLista,
 {
 	if (pElem->pValor != NULL)
 	{
-		*valor = pElem->pValor;
+		*valor = pElem->pValor;//void * pValr
 		//pLista->ExcluirValor(pElem->pValor);
 	} /* if */
 

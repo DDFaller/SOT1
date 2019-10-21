@@ -17,6 +17,8 @@
 #define FIFO "minhaFifo"
 #define OPENMODE O_WRONLY
 
+#define COMMANDSIZE 30
+
 char ReadIgnoringCharacter(FILE *f, char ignoredCharacter) {
 	char c;
 	c = fgetc(f);
@@ -125,13 +127,14 @@ char * Interpreter(FILE * f, int seconds, Escalonadores * caso) {
     char whitespace[] = {' ','\0'};
     char * firstDuration;
 	char * secondDuration;
-    command = (char*)malloc(sizeof(char)*30);
+    command = (char*)malloc(sizeof(char)*COMMANDSIZE);
 	Escalonadores type;
 	type = ReadLine(f,&fileName,&opr,&firstDuration,&secondDuration);
-    for (int i = 0;i < 29;i++){
+    
+    for (int i = 0;i < COMMANDSIZE-1;i++){
         command[i] = ' ';
     }
-    command[29] = '\0';
+    command[COMMANDSIZE-1] = '\0';
 
     secondsToStr[0] = seconds + 48;
     secondsToStr[1] = '\0';
@@ -214,7 +217,7 @@ int main(void){
             break;        
         }
         printf("\n LEN COMMAND %d\n",strlen(command));
-        write(fpFIFO,command,strlen(command));    
+        write(fpFIFO,command,COMMANDSIZE);    
         printf("\n COMANDO %s\n",command);        
         sleep(1);
         timer += 1; 
