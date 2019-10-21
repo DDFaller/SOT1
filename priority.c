@@ -13,7 +13,7 @@ int main(int argc, char * argv[]){
 	printf("Vivo \n");
 	
 	while( 1){
-		                  printf("Prioridadedjfkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk \n");
+		printf("/Eu sou a saida do priority/\n");
 		sleep(1);
 	}
 	

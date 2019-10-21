@@ -76,7 +76,8 @@ static Processo * processoExecutando;
 void priority(char * fileName, int priority) {
 	Processo * novoProcesso;
 	novoProcesso = (Processo*)malloc(sizeof(Processo));
-	novoProcesso->prioridade = priority ;
+	
+    novoProcesso->prioridade = priority;
     novoProcesso->fileName = (char*)malloc(sizeof(char) * strlen(fileName));    
     strcpy(novoProcesso->fileName,fileName);
 	novoProcesso->inicio = 1000;
@@ -143,31 +144,36 @@ void PausaProcesso(Processo * p){
     killStatus = kill(p->id,SIGSTOP);
     
     if(killStatus == 1 || p->tipo == 2){//Envio de sinal falhou supomos que o processo terminou
-		Processo * p;
+		Processo * temp;
         char ch;
-        printf("Processo concluido");
-		if(processoExecutando->tipo == 0){
+        
+        if(p->tipo == 0){
 			void * output;
-			p = BuscaProcessoID(filaDePrioridade,processoExecutando->id);
+			temp = BuscaProcessoID(filaDePrioridade,p->id);
 			LIS_ExcluirElementoOutput(filaDePrioridade,&output);
 			LIS_InserirElementoFim(debugger->processosConcluidos,output);
 		}
-		if(processoExecutando->tipo == 2){
+		if(p->tipo == 2){
 			void * output;			
-            p = BuscaProcessoID(filaDeRealTime,processoExecutando->id);
-			LIS_ExcluirElementoOutput(filaDeRoundRobin,&output);
-            printf("Concluido %s",((Processo*)output)->fileName);
-			LIS_InserirElementoFim(debugger->processosConcluidos,output);
+            Processo * leitor;
+            kill(p->id,SIGKILL);            
+            temp = BuscaProcessoID(filaDeRealTime,p->id);
+			LIS_ExcluirElementoOutput(filaDeRealTime,&output);
+            
+            leitor = (Processo*)output;            			
+            printf("Concluido /%s/",leitor->fileName);        
+            LIS_InserirElementoFim(debugger->processosConcluidos,output);
 		
 		}
-		if(processoExecutando->tipo == 1){
+		if(p->tipo == 1){
 			void * output;
 			SalvaCorrente(filaDeRoundRobin);
 			
-			p = BuscaProcessoID(filaDeRoundRobin,processoExecutando->id);
+			temp = BuscaProcessoID(filaDeRoundRobin,p->id);
 			LIS_ExcluirElementoOutput(filaDeRoundRobin,&output);  
 			LIS_InserirElementoFim(debugger->processosConcluidos, output);
-			ResetaCorrente(filaDeRoundRobin);
+			
+            ResetaCorrente(filaDeRoundRobin);
 		}
 	}
 }
@@ -258,10 +264,11 @@ void EscalonaRoundRobin(){
 void AtualizaProcesso(){
     Processo * temp;
     char ch;    
-    //printf("Time atual %d \n",timeAtual);    
+    printf("Time atual %f \n",timeAtual);    
     //printf("Atualizando processo filaDeRealTime %d\n",LIS_TamanhoLista(filaDeRealTime));
-    printf("Atualizando processo filaDePrioridade %d\n",LIS_TamanhoLista(filaDePrioridade));
+    //printf("Atualizando processo filaDePrioridade %d\n",LIS_TamanhoLista(filaDePrioridade));
     //printf("Atualizando processo filaDeRoundRobin %d\n",LIS_TamanhoLista(filaDeRoundRobin));
+    
     if(processoExecutando != NULL){
         if((timeAtual - processoExecutando->inicio) < processoExecutando->duracao){
             //printf("%f - %f < %f \n",timeAtual,processoExecutando-> inicio,processoExecutando-> duracao);            
@@ -275,13 +282,14 @@ void AtualizaProcesso(){
     
     if(processoExecutando == NULL){
         if(LIS_TamanhoLista(filaDeRealTime) && BuscaProcessoTempo(filaDeRealTime,timeAtual)){
+            printf("Fila de RealTime possui elemento valido a ser executado %d\n",timeAtual);            
             EscalonaRealTime();    
         }
         else if(LIS_TamanhoLista(filaDePrioridade)){
             EscalonaPrioridade();
         
         }
-        else{
+        else if(LIS_TamanhoLista(filaDeRoundRobin)){
             EscalonaRoundRobin();
         }
     }
@@ -295,8 +303,6 @@ void AtualizaProcesso(){
         //printf("%f - %f < %f \n",timeAtual,processoExecutando-> inicio,processoExecutando-> duracao);
     }    
     printf("%d \n",LIS_TamanhoLista(filaDePrioridade));
-    printf("----------------------Processos Concluidos--------------------------\n");
-    ExibeProcessos(debugger->processosConcluidos);
 }
 
 void ExibeProcessos(LIS_tppLista pLista){
@@ -355,7 +361,7 @@ void init() {
 	configEscalonador->duracaoRoundRobin = 0.5;//float
 	configEscalonador->maxPrioridades = 7;//int
 	configEscalonador->tempoPorPrioridade = 2;//float
-	configEscalonador->tempoParaRodar = 60;//int
+	configEscalonador->tempoParaRodar = 3;//int
 
 	debugger = (Debugger*)malloc(sizeof(Debugger));
 	debugger->processosConcluidos = LIS_CriarLista(ExcluiProcesso);
@@ -456,7 +462,7 @@ int main(void){
     ExibeProcessos(filaDePrioridade);    
     puts ("Começando a ler...");
     //while  (read (fpFIFO, &ch, sizeof(ch)) > 0){
-    while(1){    
+    while(timeAtual < 4){    
       if( (timeAtual -(int)timeAtual) == 0  && read(fpFIFO,&ch,sizeof(ch))> 0){
         pos = 0;
         printf("Comando recebido > %s \n",ch);
@@ -505,9 +511,10 @@ int main(void){
       strcpy(ch," \0");
       AtualizaProcesso();
       
-      delay(5000);
+      delay(500);
     }
-    
+    printf("----------------------Processos Concluidos--------------------------\n");
+    ExibeProcessos(debugger->processosConcluidos);
     //ExibeProcessos(filaDeRealTime);
     //ExibeProcessos(filaDePrioridade);
     //ExibeProcessos(filaDeRoundRobin);

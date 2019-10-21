@@ -9,7 +9,8 @@ void signalHandler(int sig);
 
 int main(int argc, char * argv[]){
 	while(1){
-	    printf(" R ");
+	    printf("/Eu sou a saida do round robin/\n");
+        sleep(1);
 	}
 	return 0;
 }
