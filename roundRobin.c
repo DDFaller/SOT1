@@ -10,7 +10,7 @@ void signalHandler(int sig);
 int main(int argc, char * argv[]){
 	while(1){
 	    printf("/Eu sou a saida do round robin/\n");
-        sleep(1);
+        usleep(40000);
 	}
 	return 0;
 }

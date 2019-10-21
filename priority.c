@@ -9,12 +9,10 @@ void signalHandler(int sig);
 
 int main(int argc, char * argv[]){
 	int input = 0;
-		
-	printf("Vivo \n");
 	
 	while( 1){
 		printf("/Eu sou a saida do priority/\n");
-		sleep(1);
+		usleep(40000);
 	}
 	
 	

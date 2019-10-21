@@ -13,7 +13,7 @@ int main(int argc, char * argv[]){
 	printf("Vivo \n");
 	
 	while( 1){
-		                  printf("RealTImejfkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk \n");
+		printf("RealTImejfkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk \n");
 		sleep(1);
 	}
 	
