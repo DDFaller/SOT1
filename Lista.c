@@ -259,51 +259,50 @@ LIS_tpCondRet LIS_InserirElementoApos(LIS_tppLista pLista,
 *
 *  Função: LIS  &Inserir elemento no fim
 *  ****/
-LIS_tpCondRet LIS_InserirElementoFim(LIS_tppLista pLista,
-	void * pValor)
-{
 
-	tpElemLista * pElem;
+   LIS_tpCondRet LIS_InserirElementoFim( LIS_tppLista pLista ,
+                                          void * pValor        )
+      
+   {
 
-#ifdef _DEBUG
-	assert(pLista != NULL);
-#endif
+      tpElemLista * pElem ;
+      tpElemLista * final;
 
-	/* Criar elemento a inerir antes */
+      #ifdef _DEBUG
+         assert( pLista != NULL ) ;
+      #endif
 
-	pElem = CriarElemento(pLista, pValor);
-	if (pElem == NULL)
-	{
-		return LIS_CondRetFaltouMemoria;
-	} /* if */
+      /* Criar elemento a inerir após */
 
- /* Encadear o elemento antes do elemento corrente */
+         pElem = CriarElemento( pLista , pValor ) ;
+         if ( pElem == NULL )
+         {
+            return LIS_CondRetFaltouMemoria ;
+         } /* if */
 
-	if (pLista->pElemCorr == NULL)
-	{
-		pLista->pOrigemLista = pElem;
-		pLista->pFimLista = pElem;
-	}
-	else
-	{
-		if (pLista->pElemCorr->pAnt != NULL)
-		{
-			pElem->pAnt = pLista->pElemCorr->pAnt;
-			pLista->pElemCorr->pAnt->pProx = pElem;
-		}
-		else
-		{
-			pLista->pOrigemLista = pElem;
-		} /* if */
+      /* Encadear o elemento após o elemento */
 
-		pElem->pProx = pLista->pElemCorr;
-		pLista->pElemCorr->pAnt = pElem;
-	} /* if */
+         if ( pLista->pElemCorr == NULL )
+         {
+            pLista->pOrigemLista = pElem ;
+            pLista->pFimLista = pElem ;
+         	pLista->pElemCorr = pElem;
+         	return LIS_CondRetOK;
+         } 
+         else
+         {
+            final = pLista->pFimLista;
+            pLista->pFimLista->pProx = pElem;
+            pElem->pAnt = final;
+            pElem->pProx = NULL;
+            
+           	pLista->pFimLista = pElem;
+            return LIS_CondRetOK;
+         } /* if */
+                  
+                  
 
-	pLista->pElemCorr = pElem;
-	return LIS_CondRetOK;
-
-} /* Fim função: LIS  &Inserir elemento antes */
+   } /* Fim função: LIS  &Inserir elemento fim */
 
 /***************************************************************************
 *
@@ -512,85 +511,92 @@ void IrFinalLista(LIS_tppLista pLista)
 
 } /* Fim função: LIS  &Ir para o elemento final */
 
+
 /***************************************************************************
 *
 *  Função: LIS  &Avançar elemento
 *  ****/
 
-LIS_tpCondRet LIS_AvancarElementoCorrente(LIS_tppLista pLista,
-	int numElem)
-{
+   LIS_tpCondRet LIS_AvancarElementoCorrente( LIS_tppLista pLista ,
+                                              int numElem )
+   {
 
-	int i;
+      int i ;
 
-	tpElemLista * pElem;
+      tpElemLista * pElem ;
 
-#ifdef _DEBUG
-	assert(pLista != NULL);
-#endif
+      #ifdef _DEBUG
+         assert( pLista != NULL ) ;
+      #endif
 
-	/* Tratar lista vazia */
+      /* Tratar lista vazia */
 
-	if (pLista->pElemCorr == NULL)
-	{
+         if ( pLista->pElemCorr == NULL )
+         {
 
-		return LIS_CondRetListaVazia;
+            return LIS_CondRetListaVazia ;
 
-	} /* fim ativa: Tratar lista vazia */
+         } /* fim ativa: Tratar lista vazia */
 
- /* Tratar avançar para frente */
+      /* Tratar avançar para frente */
 
-	if (numElem > 0)
-	{
+         if ( numElem > 0 )
+         {
 
-		pElem = pLista->pElemCorr;
-		for (i = numElem; i > 0; i--)
-		{
-			if (pElem == NULL) {
-				pElem = pLista->pOrigemLista;
-			}
-			else
-			{
-				pElem = pElem->pProx;
-			}
-		} /* for */
-		
-		pLista->pElemCorr = pElem;
-		return LIS_CondRetOK;
-		
-	} /* fim ativa: Tratar avançar para frente */
+            pElem = pLista->pElemCorr ;
+            for( i = numElem ; i > 0 ; i-- )
+            {
+               if ( pElem == NULL )
+               {
+                  pElem = pLista->pOrigemLista;
+               } /* if */
+               else{
+                  pElem = pElem->pProx ;
+               }
+            } /* for */
 
- /* Tratar avançar para trás */
+            if ( pElem != NULL )
+            {
+               pLista->pElemCorr = pElem ;
+               return LIS_CondRetOK ;
+            } /* if */
+			
+            pLista->pElemCorr = pLista->pOrigemLista;
+            return LIS_CondRetFimLista ;
 
-	else if (numElem < 0)
-	{
+         } /* fim ativa: Tratar avançar para frente */
 
-		pElem = pLista->pElemCorr;
-		for (i = numElem; i < 0; i++)
-		{
-			if (pElem == NULL)
-			{
-				break;
-			} /* if */
-			pElem = pElem->pAnt;
-		} /* for */
+      /* Tratar avançar para trás */
 
-		if (pElem != NULL)
-		{
-			pLista->pElemCorr = pElem;
-			return LIS_CondRetOK;
-		} /* if */
+         else if ( numElem < 0 )
+         {
 
-		pLista->pElemCorr = pLista->pOrigemLista;
-		return LIS_CondRetFimLista;
+            pElem = pLista->pElemCorr ;
+            for( i = numElem ; i < 0 ; i++ )
+            {
+               if ( pElem == NULL )
+               {
+                  pElem = pLista->pFimLista;
+               } /* if */
+               pElem = pElem->pAnt ;
+            } /* for */
 
-	} /* fim ativa: Tratar avançar para trás */
+            if ( pElem != NULL )
+            {
+               pLista->pElemCorr = pElem ;
+               return LIS_CondRetOK ;
+            } /* if */
+			pLista->pElemCorr = pLista->pFimLista;
+            return LIS_CondRetFimLista ;
 
- /* Tratar não avançar */
+         } /* fim ativa: Tratar avançar para trás */
 
-	return LIS_CondRetOK;
+      /* Tratar não avançar */
 
-} /* Fim função: LIS  &Avançar elemento */
+         return LIS_CondRetOK ;
+
+   } /* Fim função: LIS  &Avançar elemento */
+
 
 /***************************************************************************
 *

@@ -443,18 +443,19 @@ int FindWhiteSpace(char * palavra, int idx){
 
 void ParaProcessos(LIS_tppLista pLista) {
 	Processo * temp;
-	int i;
-	printf("Tamanho Lista %d \n",LIS_TamanhoLista(pLista));
-	for(i = 0;i< LIS_TamanhoLista(pLista);){
+	int max;
+	max = LIS_TamanhoLista(pLista);
+	
+	IrInicioLista(pLista);
+	for(int i = 0;i< max;i++){
 		void * output;
 		temp = (Processo*)LIS_ObterValor(pLista);
 		
 		kill(temp->id,SIGKILL);
-		printf("Temp ID %d \n",temp->id);
+		
 		LIS_ExcluirElementoOutput(pLista,&output);
-		LIS_InserirElementoFim(debugger->processosIncompletos,output);
+		LIS_InserirElementoFim(debugger->processosIncompletos,(void*)temp);
 		LIS_AvancarElemento(pLista);
-		i++;
 	}
 }
 
@@ -536,11 +537,18 @@ int main(void){
       
       delay(500);
     }
+    IrInicioLista(filaDeRoundRobin);
+    LIS_AvancarElemento(filaDeRoundRobin);
+    LIS_AvancarElemento(filaDeRoundRobin);
+    LIS_AvancarElemento(filaDeRoundRobin);
+    
+    
+    printf("-----------------Processos Concluidos--------------------------\n");
+    ExibeProcessos(debugger->processosConcluidos);
     ParaProcessos(filaDePrioridade);
     ParaProcessos(filaDeRoundRobin);
     ParaProcessos(filaDeRealTime);
-    printf("----------------------Processos Concluidos--------------------------\n");
-    ExibeProcessos(debugger->processosConcluidos);
+    
     printf("----------------------Processos Incompletos-------------------------\n");
     ExibeProcessos(debugger->processosIncompletos);
     //ExibeProcessos(filaDeRealTime);
