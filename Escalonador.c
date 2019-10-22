@@ -491,16 +491,17 @@ int main(void){
     //} 
     puts ("Abrindo Comunica Kernel - Escalonador");
     
-    
+    if ((kFIFO = open (FIFOESC, OPENMODE)) < 0) {
+        fprintf (stderr, "Erro ao abrir a FIFO %s\n", FIFOESC);
+        return -2;
+    }    
+
     if ((fpFIFO = open (FIFO, OPENMODE)) < 0) {
         fprintf (stderr, "Erro ao abrir a FIFO %s\n", FIFO);
         return -2;
     }
     
-    if ((kFIFO = open (FIFOESC, OPENMODE)) < 0) {
-        fprintf (stderr, "Erro ao abrir a FIFO %s\n", FIFOESC);
-        return -2;
-    }
+    
      
     puts ("Começando a ler...");
     //while  (read (fpFIFO, &ch, sizeof(ch)) > 0){
@@ -534,6 +535,34 @@ int main(void){
         whiteSpace = FindWhiteSpace(ch,0);
         timer = atoi(GetSubstring(ch,0,whiteSpace));
         pos = whiteSpace;
+        
+        if(timer == -1){
+            whiteSpace = FindWhiteSpace(ch,pos + 1);
+            kernel = GetSubstring(ch,pos,whiteSpace);
+            pos = whiteSpace;          
+            printf("Comando %s \n",kernel);
+            
+            if(strcmp(kernel,"pause") == 0){
+      		    kernelPause = 1;
+      		    PausaProcesso(processoExecutando);
+      	    }
+      	    if(strcmp(kernel,"resume") == 0){
+      		    kernelPause = 0;
+      		    LiberaProcesso(processoExecutando);
+      	    }
+      	    if(strcmp(kernel,"show") == 0){
+      		    printf("----------------- Fila de Prioridade ---------------");
+      		    ExibeProcessos(filaDePrioridade);
+      		    printf("----------------- Fila de Round Robin ---------------");
+      		    ExibeProcessos(filaDeRoundRobin);
+      		    printf("----------------- Fila de Real Time ---------------");
+      		    ExibeProcessos(filaDeRealTime);
+      		    ExibeProcessos(debugger->processosConcluidos);
+      	    }         
+                                                                        
+        }
+        else{
+        
         //CASO
         whiteSpace = FindWhiteSpace(ch,pos + 1);
         caso = GetSubstring(ch,pos,whiteSpace);
@@ -571,12 +600,15 @@ int main(void){
             //printf("RoundRobin a adicionar %s \n",fileName);         
             roundrobin(fileName);
         }
-        
+        }        
         strcpy(ch," \0");
         printf("Comando limpo > %s \n",ch);
       }
       strcpy(ch," \0");
-      AtualizaProcesso();
+
+      if(kernelPause == 0){
+        AtualizaProcesso();
+      }
       
       delay(500);
     }

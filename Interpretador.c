@@ -16,7 +16,7 @@
 #define ValidCharacters(c) if (c != ' ' && c != '\n' && c != EOF && c != '=' && c!= '*')
 #define FIFO "comunicaInterToEscal"
 #define FIFOINT "comunicaInter"
-#define OPENMODEW O_WRONLY | O_NONBLOCK
+#define OPENMODEW O_WRONLY
 #define OPENMODER O_RDONLY | O_NONBLOCK
 
 #define COMMANDSIZE 30
@@ -221,16 +221,18 @@ int main(void){
     } 
     puts ("Abrindo fifo Interpretador - Escalonador");
     
+    if ((escFIFO = open (FIFO, OPENMODEW)) < 0) {
+        fprintf (stderr, "Erro ao abrir a FIFO %s\n", FIFO);
+        return -2; 
+    } 
+
     if ((kFIFO = open (FIFOINT, OPENMODER)) < 0) {
         fprintf (stderr, "Erro ao abrir a FIFO %s\n", FIFO);
         return -2; 
     } 
     
    	
-   	if ((escFIFO = open (FIFO, OPENMODEW)) < 0) {
-        fprintf (stderr, "Erro ao abrir a FIFO %s\n", FIFO);
-        return -2; 
-    } 
+   	
    
 
     puts ("Começando a ler...");

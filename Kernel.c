@@ -5,7 +5,7 @@
 
 #define FIFOINT "comunicaInter"
 #define FIFOESC	"comunicaEscal"
-#define OPENMODEN O_WRONLY | O_NONBLOCK
+#define OPENMODEN O_WRONLY
 #define OPENMODE O_WRONLY
 #define TRUE 1
 #define COMMANDSIZE 10
@@ -47,11 +47,10 @@ int main(int argc,char * argv[]){
         scanf("%s",command);
         printf("%s\n",command);
         
-		write(escFIFO,command,COMMANDSIZE);
-		
-		printf("%s\n",command);
-		
-		write(intFIFO,command,COMMANDSIZE);      
+        write(intFIFO,command,COMMANDSIZE);		
+        write(escFIFO,command,COMMANDSIZE);	
+	
+		      
     }
 
 
