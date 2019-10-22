@@ -507,14 +507,18 @@ int main(void){
     //while  (read (fpFIFO, &ch, sizeof(ch)) > 0){
     while(timeAtual < 4){
       
-      if(read(fpFIFO,&kernel,sizeof(kernel)) > 0){
+      if(read(kFIFO,&kernel,sizeof(kernel)) > 0){
       	if(strcmp(kernel,"pause") == 0){
       		kernelPause = 1;
-      		PausaProcesso(processoExecutando);
+            if(processoExecutando != NULL){
+      		    PausaProcesso(processoExecutando);
+            }
       	}
       	if(strcmp(kernel,"resume") == 0){
       		kernelPause = 0;
-      		LiberaProcesso(processoExecutando);
+            if(processoExecutando != NULL){
+      		    LiberaProcesso(processoExecutando);
+            }
       	}
       	if(strcmp(kernel,"show") == 0){
       		printf("----------------- Fila de Prioridade ---------------");
@@ -526,6 +530,7 @@ int main(void){
       		ExibeProcessos(debugger->processosConcluidos);
       	}
       }
+      
           
       if( (timeAtual -(int)timeAtual) == 0  && read(fpFIFO,&ch,sizeof(ch))> 0 && kernelPause == 0){
         pos = 0;
@@ -535,33 +540,7 @@ int main(void){
         whiteSpace = FindWhiteSpace(ch,0);
         timer = atoi(GetSubstring(ch,0,whiteSpace));
         pos = whiteSpace;
-        
-        if(timer == -1){
-            whiteSpace = FindWhiteSpace(ch,pos + 1);
-            kernel = GetSubstring(ch,pos,whiteSpace);
-            pos = whiteSpace;          
-            printf("Comando %s \n",kernel);
-            
-            if(strcmp(kernel,"pause") == 0){
-      		    kernelPause = 1;
-      		    PausaProcesso(processoExecutando);
-      	    }
-      	    if(strcmp(kernel,"resume") == 0){
-      		    kernelPause = 0;
-      		    LiberaProcesso(processoExecutando);
-      	    }
-      	    if(strcmp(kernel,"show") == 0){
-      		    printf("----------------- Fila de Prioridade ---------------");
-      		    ExibeProcessos(filaDePrioridade);
-      		    printf("----------------- Fila de Round Robin ---------------");
-      		    ExibeProcessos(filaDeRoundRobin);
-      		    printf("----------------- Fila de Real Time ---------------");
-      		    ExibeProcessos(filaDeRealTime);
-      		    ExibeProcessos(debugger->processosConcluidos);
-      	    }         
-                                                                        
-        }
-        else{
+                                                          
         
         //CASO
         whiteSpace = FindWhiteSpace(ch,pos + 1);
@@ -600,7 +579,7 @@ int main(void){
             //printf("RoundRobin a adicionar %s \n",fileName);         
             roundrobin(fileName);
         }
-        }        
+        
         strcpy(ch," \0");
         printf("Comando limpo > %s \n",ch);
       }
