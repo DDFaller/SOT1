@@ -11,8 +11,10 @@
 #include <time.h>
 
 #define TRUE 1
-#define FIFO "minhaFifo"
-#define OPENMODE O_RDONLY
+#define FIFO "comunicaInterToEscal"
+#define FIFOESC "comunicaEscal"
+#define OPENMODE O_RDONLY | O_NONBLOCK
+#define COMMANDSIZE 30
 
 static LIS_tppLista filaDeRoundRobin;
 static LIS_tppLista filaDePrioridade;
@@ -71,7 +73,7 @@ Processo * BuscaProcessoPrioritario(LIS_tppLista pLista);
 static Constantes * configEscalonador;
 static Debugger * debugger;
 static Processo * processoExecutando;
-
+static int kernelPause = 0;
 
 
 void priority(char * fileName, int priority) {
@@ -124,12 +126,12 @@ void PausaProcesso(Processo * p){
     int killStatus;//0:Enviou sinal 1:Falhou
 	char c;
 	if( p->tipo == 0){
-		if(p->prioridade < configEscalonador->maxPrioridades ){
+		if(p->prioridade < configEscalonador->maxPrioridades && kernelPause == 0){
             p->prioridade = p->prioridade +  1;
         }
 	}
 	if(p->tipo == 2){
-		if(timeAtual < p->inicio + p->duracao){
+		if(timeAtual < p->inicio + p->duracao && kernelPause == 0){
 			printf("Erro processo %s,em Real Time foi pausado quando não deveria",p->fileName);
 		}
 		else{
@@ -141,7 +143,7 @@ void PausaProcesso(Processo * p){
 	}
     
 	p->status = 0;
-    	
+	
     killStatus = kill(p->id,SIGSTOP);
     
     if(killStatus == 1 || p->tipo == RealTime){//Envio de sinal falhou supomos que o processo terminou
@@ -350,6 +352,7 @@ void ExcluiProcesso(void * pDado) {
 }
 
 void init() {
+	kernelPause = 1;
 	#if defined TIMEFUNCTION
 		timeAtual = time(NULL);
 	#else
@@ -463,27 +466,67 @@ void delay(int milliseconds);
 
 int main(void){
     int fpFIFO;
-    char ch[30];
+    int kFIFO;
+    char ch[COMMANDSIZE];
+    char kernel[10];
     int timer = 0,pos = 0,whiteSpace = 0;
     char * caso,*fileName,*inicio,*duracao;   
     init();    
     
-    if (access(FIFO, F_OK) == -1) {
-        if (mkfifo (FIFO, S_IRUSR | S_IWUSR) != 0) {
-            fprintf (stderr, "Erro ao criar FIFO %s\n", FIFO);
-            return -1;
-        }
-    } 
-    puts ("Abrindo FIFO");
+    //#define FIFO "comunicaInterToEscal"
+	//#define FIFOESC "comunicaEscal"
+    //if (access(FIFO, F_OK) == -1) {
+    //    if (mkfifo (FIFO, S_IRUSR | S_IWUSR) != 0) {
+    //        fprintf (stderr, "Erro ao criar FIFO %s\n", FIFO);
+    //        return -1;
+    //    }
+    //} 
+    puts ("Abrindo Comunica Interpretador - Escalonador");
+    
+    //if (access(FIFOESC, F_OK) == -1) {
+     //   if (mkfifo (FIFOESC, S_IRUSR | S_IWUSR) != 0) {
+     //       fprintf (stderr, "Erro ao criar FIFO %s\n", FIFOESC);
+     //       return -1;
+     //   }
+    //} 
+    puts ("Abrindo Comunica Kernel - Escalonador");
+    
+    
     if ((fpFIFO = open (FIFO, OPENMODE)) < 0) {
         fprintf (stderr, "Erro ao abrir a FIFO %s\n", FIFO);
+        return -2;
+    }
+    
+    if ((kFIFO = open (FIFOESC, OPENMODE)) < 0) {
+        fprintf (stderr, "Erro ao abrir a FIFO %s\n", FIFOESC);
         return -2;
     }
      
     puts ("Começando a ler...");
     //while  (read (fpFIFO, &ch, sizeof(ch)) > 0){
-    while(timeAtual < 4){    
-      if( (timeAtual -(int)timeAtual) == 0  && read(fpFIFO,&ch,sizeof(ch))> 0){
+    while(timeAtual < 4){
+      
+      if(read(fpFIFO,&kernel,sizeof(kernel)) > 0){
+      	if(strcmp(kernel,"pause") == 0){
+      		kernelPause = 1;
+      		PausaProcesso(processoExecutando);
+      	}
+      	if(strcmp(kernel,"resume") == 0){
+      		kernelPause = 0;
+      		LiberaProcesso(processoExecutando);
+      	}
+      	if(strcmp(kernel,"show") == 0){
+      		printf("----------------- Fila de Prioridade ---------------");
+      		ExibeProcessos(filaDePrioridade);
+      		printf("----------------- Fila de Round Robin ---------------");
+      		ExibeProcessos(filaDeRoundRobin);
+      		printf("----------------- Fila de Real Time ---------------");
+      		ExibeProcessos(filaDeRealTime);
+      		ExibeProcessos(debugger->processosConcluidos);
+      	}
+      }
+          
+      if( (timeAtual -(int)timeAtual) == 0  && read(fpFIFO,&ch,sizeof(ch))> 0 && kernelPause == 0){
         pos = 0;
         printf("Comando recebido > %s \n",ch);
        
@@ -556,6 +599,7 @@ int main(void){
     //ExibeProcessos(filaDeRoundRobin);
     puts ("Fim da leitura");
     close (fpFIFO);
+    close (kFIFO);
     return 0;
 }
 
@@ -569,5 +613,7 @@ void delay(int milliseconds)
     while( (now-then) < pause ){
         now = clock();
     }
-    timeAtual += 0.5;
+    if(kernelPause == 0){
+    	timeAtual += 0.5;
+    }
 }

@@ -14,10 +14,14 @@
 #define print printf
 #define WHITESPACE '?'
 #define ValidCharacters(c) if (c != ' ' && c != '\n' && c != EOF && c != '=' && c!= '*')
-#define FIFO "minhaFifo"
-#define OPENMODE O_WRONLY
+#define FIFO "comunicaInterToEscal"
+#define FIFOINT "comunicaInter"
+#define OPENMODEW O_WRONLY | O_NONBLOCK
+#define OPENMODER O_RDONLY | O_NONBLOCK
 
 #define COMMANDSIZE 30
+
+static int kernelPause = 1;
 
 char ReadIgnoringCharacter(FILE *f, char ignoredCharacter) {
 	char c;
@@ -187,12 +191,27 @@ char * Interpreter(FILE * f, int seconds, Escalonadores * caso) {
 }
 
 int main(void){
-    int fpFIFO;
+    int escFIFO;
+    int kFIFO;
     char ch;
-    FILE * arq;            
+    FILE * arq;
+    char kernel[10];            
     char * command;
     int timer = 0;
     Escalonadores escalonadorType;
+    
+    kernelPause = 1;
+    
+    //#define FIFO "comunicaInterToEscal"
+	//#define FIFOINT "comunicaInter"
+
+    //if (access(FIFOINT, F_OK) == -1) {
+    //    if (mkfifo (FIFOINT, S_IRUSR | S_IWUSR) != 0) {
+    //        fprintf (stderr, "Erro ao criar FIFO %s\n", FIFOINT);
+    //        return -1; 
+    //    } 
+    //} 
+    //puts ("Abrindo fifo Kernel - Interpretador");
     
     if (access(FIFO, F_OK) == -1) {
         if (mkfifo (FIFO, S_IRUSR | S_IWUSR) != 0) {
@@ -200,33 +219,54 @@ int main(void){
             return -1; 
         } 
     } 
-    puts ("Abrindo FIFO");
-    if ((fpFIFO = open (FIFO, OPENMODE)) < 0) {
+    puts ("Abrindo fifo Interpretador - Escalonador");
+    
+    if ((kFIFO = open (FIFOINT, OPENMODER)) < 0) {
         fprintf (stderr, "Erro ao abrir a FIFO %s\n", FIFO);
         return -2; 
     } 
+    
+   	
+   	if ((escFIFO = open (FIFO, OPENMODEW)) < 0) {
+        fprintf (stderr, "Erro ao abrir a FIFO %s\n", FIFO);
+        return -2; 
+    } 
+   
+
     puts ("Começando a ler...");
     arq = fopen("desc.txt","r");    
     
-    
-    
     while (1){
-        printf("%d \n",timer);
-        command = Interpreter(arq,timer,&escalonadorType);
-        if(escalonadorType == Unknown){
-            break;        
+    	if(read(kFIFO,&kernel,sizeof(kernel))>0){
+      		if(strcmp(kernel,"pause") == 0){
+      			kernelPause = 1;
+      		}
+      		if(strcmp(kernel,"resume") == 0){
+      			kernelPause = 0;
+      		}          
+      		if(strcmp(kernel,"show") == 0){
+      			
+      		}
+     	}
+        else if(kernelPause == 0){
+        	printf("%d \n",timer);
+        	command = Interpreter(arq,timer,&escalonadorType);
+        	if(escalonadorType == Unknown){
+            	break;        
+        	}
+        	printf("\n LEN COMMAND %d\n",strlen(command));
+       		write(escFIFO,command,COMMANDSIZE);    
+        	printf("\n COMANDO %s\n",command);        
+        	sleep(1);
+        	timer += 1; 
+        	free(command);
         }
-        printf("\n LEN COMMAND %d\n",strlen(command));
-        write(fpFIFO,command,COMMANDSIZE);    
-        printf("\n COMANDO %s\n",command);        
-        sleep(1);
-        timer += 1; 
-        free(command);
     } 
    
     
     puts ("Fim da escrita");
-    close (fpFIFO);
+    close (escFIFO);
+    close(kFIFO);
     return 0;
 } 
 
